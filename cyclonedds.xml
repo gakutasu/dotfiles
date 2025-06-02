@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <!-- localhost only -->
+  <Domain Id="31">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="false" name="lo" priority="default" multicast="false"/>
+      </Interfaces>
+      <AllowMulticast>false</AllowMulticast>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Internal>
+      <SocketReceiveBufferSize min="16MB"/>
+    </Internal>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>10000</MaxAutoParticipantIndex>
+      <Peers>
+        <Peer Address="localhost"/>
+      </Peers>
+    </Discovery>
+  </Domain>
+  <!-- Static discovery -->
+  <Domain Id="33">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="false" name="lo" priority="default" multicast="default"/>
+        <NetworkInterface autodetermine="false" name="enp5s0" priority="default" multicast="default"/>
+        <!-- <NetworkInterface autodetermine="false" name="eno1" priority="default" multicast="default"/> -->
+        <!-- <NetworkInterface autodetermine="false" name="eth0" priority="default" multicast="default"/> -->
+        <!-- <NetworkInterface autodetermine="false" name="wlan0" priority="default" multicast="default"/> -->
+      </Interfaces>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Internal>
+      <SocketReceiveBufferSize min="16MB"/>
+    </Internal>
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>10000</MaxAutoParticipantIndex>
+      <Peers>
+        <Peer Address="localhost"/>
+        <!-- <Peer address="192.168.1.10"/> -->
+      </Peers>
+    </Discovery>
+  </Domain>
+  <!-- Auto discovery -->
+  <Domain Id="35">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="true" name="enp5s0" priority="default" multicast="default"/>
+      </Interfaces>
+      <AllowMulticast>default</AllowMulticast>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Internal>
+      <SocketReceiveBufferSize min="16MB"/>
+    </Internal>
+  </Domain>
+</CycloneDDS>
