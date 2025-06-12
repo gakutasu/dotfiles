@@ -158,4 +158,4 @@ source ~/ros2_alias.sh
 
 
 # secrets
-source ~/.secrets
+source ~/.secrets/.secrets
