@@ -121,19 +121,23 @@ fi
 # editor
 export EDITOR='nano'
 
+
 ## CUDA and cuDNN paths
 export PATH="/usr/local/cuda/bin:${PATH}"
 export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
+
 # japanese
 setxkbmap jp
+
 
 # fzf and zoxide
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 
 # ROS2
-source /opt/ros/jazzy/setup.bash
+ros2_setup_bash=$(find /opt/ros -maxdepth 2 -name setup.bash | head -n 1)
+[ -n "$ros2_setup_bash" ] && source "$ros2_setup_bash"
 source /usr/share/vcstool-completion/vcs.bash
 # BEGIN ANSIBLE MANAGED BLOCK FOR ROS2 ENV
 export ROS_DOMAIN_ID=31
