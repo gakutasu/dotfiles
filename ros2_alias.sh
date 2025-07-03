@@ -88,13 +88,3 @@ rosdep() {
             ;;
     esac
 }
-
-source /usr/share/colcon_cd/function/colcon_cd.sh
-
-if [ -f /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash ]; then
-    source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
-elif [ -f /usr/share/bash-completion/completions/colcon ]; then
-    source /usr/share/bash-completion/completions/colcon
-else
-    echo "No colcon completion."
-fi
