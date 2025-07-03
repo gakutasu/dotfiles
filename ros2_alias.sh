@@ -56,6 +56,15 @@ colcon() {
             fi
             [ -f "$ws/install/setup.bash" ] && source "$ws/install/setup.bash"
             ;;
+        clean)
+            local ws
+            ws=$(find_ros_workspace_root) || return 1
+            if [ $# -eq 0 ]; then
+                (cd "$ws" && "$REAL_COLCON" clean workspace)
+            else
+                (cd "$ws" && "$REAL_COLCON" clean packages --packages-up-to "$1")
+            fi
+            ;;
         kill)
             ps aux | grep ros | grep -v grep | awk '{ print "kill -9", $2 }' | sh
             ;;
