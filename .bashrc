@@ -122,7 +122,7 @@ fi
 export EDITOR='nano'
 
 
-## CUDA and cuDNN paths
+# CUDA and cuDNN paths
 export PATH="/usr/local/cuda/bin:${PATH}"
 export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
