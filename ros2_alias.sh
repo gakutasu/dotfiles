@@ -33,40 +33,54 @@ colcon() {
         source)
             local ws
             ws=$(find_ros_workspace_root) || return 1
-            [ -f "$ws/install/setup.bash" ] && source "$ws/install/setup.bash"
+            if [ -f "$ws/install/setup.bash" ]; then
+                source "$ws/install/setup.bash"
+                echo "Sourced $ws/install/setup.bash"
+            else
+                echo -e "\e[31m$ws/install/setup.bash not found.\e[0m"
+            fi
             ;;
         bt)
             local ws
             ws=$(find_ros_workspace_root) || return 1
-            [ ! -f "package.xml" ] && echo "package.xml not found." && return 1
+            if [ ! -f "package.xml" ]; then
+                echo -e "\e[31mpackage.xml not found in $(pwd).\e[0m" >&2
+                return 1
+            fi
             local pkg_name
             pkg_name=$(grep "<name>" package.xml | sed -e "s/<[^>]*>//g" | xargs)
-            (cd "$ws" && "$REAL_COLCON" build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            cd "$ws" || return 1
+            "$REAL_COLCON" build --symlink-install \
+                --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
                 -DCMAKE_BUILD_TYPE=Release \
-                --parallel-workers "$(nproc)" --packages-up-to "$pkg_name")
-            [ -f "$ws/install/setup.bash" ] && source "$ws/install/setup.bash"
+                --parallel-workers "$(nproc)" --packages-up-to "$pkg_name"
+            colcon source
             ;;
         build)
             local ws
             ws=$(find_ros_workspace_root) || return 1
+            cd "$ws" || return 1
             if [ $# -gt 0 ]; then
-                (cd "$ws" && "$REAL_COLCON" build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                "$REAL_COLCON" build --symlink-install \
+                    --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
                     -DCMAKE_BUILD_TYPE=Release \
-                    --parallel-workers "$(nproc)" --packages-up-to "$1")
+                    --parallel-workers "$(nproc)" --packages-up-to "$1"
             else
-                (cd "$ws" && "$REAL_COLCON" build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                "$REAL_COLCON" build --symlink-install \
+                    --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
                     -DCMAKE_BUILD_TYPE=Release \
-                    --parallel-workers "$(nproc)")
+                    --parallel-workers "$(nproc)"
             fi
-            [ -f "$ws/install/setup.bash" ] && source "$ws/install/setup.bash"
+            colcon source
             ;;
         clean)
             local ws
             ws=$(find_ros_workspace_root) || return 1
+            cd "$ws" || return 1
             if [ $# -eq 0 ]; then
-                (cd "$ws" && "$REAL_COLCON" clean workspace)
+                "$REAL_COLCON" clean workspace
             else
-                (cd "$ws" && "$REAL_COLCON" clean packages --packages-up-to "$1")
+                "$REAL_COLCON" clean packages --packages-up-to "$1"
             fi
             ;;
         kill)
@@ -85,7 +99,8 @@ rosdep() {
         install)
             local ws
             ws=$(find_ros_workspace_root) || return 1
-            (cd "$ws" && "$REAL_ROSDEP" install --from-paths src --ignore-src -ry "$@")
+            cd "$ws" || return 1
+            "$REAL_ROSDEP" install --from-paths src --ignore-src -ry "$@"
             ;;
         *)
             "$REAL_ROSDEP" "$sub" "$@"
