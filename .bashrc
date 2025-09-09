@@ -157,7 +157,8 @@ export CYCLONEDDS_URI=file://$HOME/cyclonedds.xml
 # myROS2
 #export ROS_LOCALHOST_ONLY=1 # Enable only localhost
 #export LIBGL_ALWAYS_SOFTWARE=1 # Disable hardware acceleration for GUI tools
-export RCUTILS_CONSOLE_OUTPUT_FORMAT='[{severity}]: {message}' # Simplify log output
+export RCUTILS_CONSOLE_OUTPUT_FORMAT='[{function_name}():{line_number}]: {message}' # Simplify log output
+# export RCUTILS_LOGGING_SEVERITY_THRESHOLD=DEBUG # Set default log level to DEBUG
 source ~/ros2_alias.sh
 
 
