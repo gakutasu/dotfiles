@@ -10,8 +10,12 @@ find_ros_workspace_root() {
     local dir=$(pwd)
     while [ "$dir" != "/" ]; do
         if [ -d "$dir/src" ]; then
-            echo "$dir"
-            return 0
+            if find "$dir/src" -name package.xml | grep -q .; then
+                if [ ! -f "$dir/package.xml" ]; then
+                    echo "$dir"
+                    return 0
+                fi
+            fi
         fi
         dir=$(dirname "$dir")
     done
