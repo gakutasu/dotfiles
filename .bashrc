@@ -131,8 +131,8 @@ export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 setxkbmap jp
 
 
-# fzf and zoxide
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+# fzf
+source /usr/share/doc/fzf/examples/key-bindings.bash
 
 
 # ROS2
