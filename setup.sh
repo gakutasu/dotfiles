@@ -11,22 +11,14 @@ symlink_dotfiles() {
     done
 }
 
-add_sysctl_conf() {
-    CONF_FILE="$DOTFILES_DIR/10-cyclone-max.conf"
-    if [ -f "$CONF_FILE" ]; then
-        echo "Adding $CONF_FILE to /etc/sysctl.conf ..."
-        sudo tee -a /etc/sysctl.conf < "$CONF_FILE"
-        echo "Applying sysctl settings ..."
-        sudo sysctl -p
-    else
-        echo "$CONF_FILE not found."
-        return 1
-    fi
+link_cyclone_sysctl_conf() {
+    sudo ln -sf "$DOTFILES_DIR/10-cyclone-max.conf" /etc/sysctl.d/10-cyclone-max.conf
+    sudo sysctl -q --system
 }
 
 main() {
     symlink_dotfiles
-    add_sysctl_conf
+    link_cyclone_sysctl_conf
 }
 
 main "$@"
