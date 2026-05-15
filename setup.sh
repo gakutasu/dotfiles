@@ -16,9 +16,14 @@ link_cyclone_sysctl_conf() {
     sudo sysctl -q --system
 }
 
+setup_claude() {
+    sh "$DOTFILES_DIR/.claude/claude_setup.sh"
+}
+
 main() {
     symlink_dotfiles
     link_cyclone_sysctl_conf
+    setup_claude
 }
 
 main "$@"

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(apt list *)",
+      "Bash(apt-cache search *)",
+      "Bash(git checkout *)",
+      "Bash(git fetch *)",
+      "Bash(git stash *)",
+      "Bash(gh repo *)",
+      "Bash(python3)",
+      "Bash(ros2 component *)",
+      "Bash(ros2 param *)",
+      "Bash(ros2 run *)",
+      "Bash(ros2 topic *)",
+      "Bash(xargs cat)",
+      "Bash(xxd)",
+      "WebFetch(domain:qiita.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ],
+    "additionalDirectories": [
+      "/home/gakutasu/.claude/skills",
+      "/home/gakutasu/.claude/commands"
+    ]
+  },
+  "model": "opus"
+}
