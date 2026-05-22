@@ -23,7 +23,7 @@ description: 現在の作業ブランチのコミット済み変更で GitHub PR
 - ステージング・未コミットの状態: `git status --short`
 - PR テンプレート検索:
   ```
-  find . -maxdepth 4 \( -name "PULL_REQUEST_TEMPLATE.md" -o -name "pull_request_template.md" \) -not -path "*/node_modules/*" 2>/dev/null
+  find . -maxdepth 4 \( -path "*/.github/PULL_REQUEST_TEMPLATE/*.md" -o -name "PULL_REQUEST_TEMPLATE.md" -o -name "pull_request_template.md" \) -not -path "*/node_modules/*" 2>/dev/null
   ```
 - organization の取得: `git remote get-url origin | sed 's|.*github\.com[:/]\([^/]*\)/.*|\1|'`
 
@@ -47,24 +47,32 @@ git push -u origin <現在のブランチ名>
 
 ## 4. PR テンプレート読み込み
 
-以下の優先順位でテンプレートを探し、最初に見つかったものを `Read` ツールで読み込むこと。
+以下の優先順位でテンプレートを探す。**ファイル名は固定せず、必ず一覧取得してから読み込むこと。**
 
 **優先順位:**
 
-1. **リポジトリのテンプレート**（コンテキスト収集の検索結果から判断）
-   - `.github/PULL_REQUEST_TEMPLATE.md`
-   - `.github/pull_request_template.md`
-   - `docs/PULL_REQUEST_TEMPLATE.md`
-   - `PULL_REQUEST_TEMPLATE.md`
+1. **リポジトリのテンプレート**（コンテキスト収集の `find` 結果を使う）
+   - `.github/PULL_REQUEST_TEMPLATE.md` / `.github/pull_request_template.md`
+   - `.github/PULL_REQUEST_TEMPLATE/*.md`（複数バリアント）
+   - `docs/PULL_REQUEST_TEMPLATE.md` / `PULL_REQUEST_TEMPLATE.md`
+   - **複数ある場合は PR の内容に合うものを自分で選ぶ**（後述）
 
 2. **organization の共通テンプレート**（リポジトリに存在しない場合）
 
-   コンテキスト収集で取得した org 名を使い、`gh api` で org 共通の `.github` リポジトリからテンプレートを取得する。以下の候補を順に試し、最初に取得できたものを使う（`gh api` は Base64 エンコードで返すので `base64 -d` でデコードする）。
+   コンテキスト収集で取得した org 名を使い、`gh api` でディレクトリ一覧を取得してから内容を読み込む。`gh api` は Base64 エンコードで返すので `base64 -d` でデコードする。
 
+   ```bash
+   # Step 1: ディレクトリ一覧を取得してファイル名を確認する
+   gh api repos/<org>/.github/contents/.github 2>/dev/null | jq -r '.[].name'
+
+   # Step 2: 見つかったファイル名で内容を取得する
+   gh api repos/<org>/.github/contents/.github/<実際のファイル名> --jq '.content' | base64 -d 2>/dev/null
+
+   # PULL_REQUEST_TEMPLATE/ ディレクトリがある場合
+   gh api repos/<org>/.github/contents/.github/PULL_REQUEST_TEMPLATE 2>/dev/null | jq -r '.[].name'
    ```
-   gh api repos/<org>/.github/contents/.github/PULL_REQUEST_TEMPLATE.md --jq '.content' | base64 -d 2>/dev/null
-   gh api repos/<org>/.github/contents/PULL_REQUEST_TEMPLATE.md --jq '.content' | base64 -d 2>/dev/null
-   ```
+
+   **複数ある場合は PR の内容に合うものを自分で選ぶ**（後述）
 
 3. **デフォルト構成**（上記どちらも存在しない場合）
 
@@ -78,6 +86,17 @@ git push -u origin <現在のブランチ名>
 ## Test
 - （動作確認の手順）
 ```
+
+**テンプレートが複数ある場合:**
+
+ファイル名・`name` フィールド・`about` フィールドと、PR の内容を照合して最も適切なものを自分で選ぶ。判断基準：
+
+- バグ修正 → bug fix 系
+- 新機能 → feature 系
+- ドキュメント変更 → docs 系
+- リファクタリング → refactor / chore 系
+
+どのテンプレートにも当てはまらない、または甲乙つけがたい場合に限りユーザーに確認する。
 
 ## 5. PR プレビュー表示・承認確認
 
@@ -94,7 +113,7 @@ git push -u origin <現在のブランチ名>
 ```
 
 - **タイトルは英語**（例: `Add user authentication`, `Fix null pointer exception`）
-- **ボディは日本語**でテンプレートを埋めること
+- **ボディは日本語**でテンプレートを埋めること。**文体は常体（だ・である調）とし、ですます調は使用しないこと**（例: ×「認証機能を追加します」 → ○「認証機能を追加する」）
 - ステージング済み・未コミットの変更は PR の説明に含めないこと
 - 関連する issue がある場合は、テンプレートの該当箇所に prefix を付けて明示すること
   - `close #123` / `fix #123` — PR マージ時に issue を自動クローズする
