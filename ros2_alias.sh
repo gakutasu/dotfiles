@@ -85,7 +85,7 @@ rosclean() {
     if [ $# -eq 0 ]; then
         colcon clean workspace
     else
-        colcon clean packages --packages-up-to "$1"
+        colcon clean packages --packages-select "$1"
     fi
 }
 
