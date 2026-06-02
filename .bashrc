@@ -134,6 +134,14 @@ setxkbmap jp
 # fzf
 source /usr/share/doc/fzf/examples/key-bindings.bash
 
+# .mp4 to gif
+togif() {
+    local input="$1"
+    local fps="${2:-7}"
+    local width="${3:-640}"
+    local output="${input%.mp4}.gif"
+    ffmpeg -i "$input" -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer" -loop 0 "$output"
+}
 
 # ROS2
 ros2_setup_bash=$(find /opt/ros -maxdepth 2 -name setup.bash | head -n 1)
