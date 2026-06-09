@@ -16,6 +16,13 @@ link_cyclone_sysctl_conf() {
     sudo sysctl -q --system
 }
 
+# For claude code japanese input
+# Fix missing GTK_IM_MODULE on GNOME so IME preedit shows in VTE terminals
+link_ime_conf() {
+    mkdir -p "$HOME/.config/environment.d"
+    ln -sf "$DOTFILES_DIR/.config/environment.d/ime.conf" "$HOME/.config/environment.d/ime.conf"
+}
+
 setup_claude() {
     sh "$DOTFILES_DIR/.claude/claude_setup.sh"
 }
@@ -23,6 +30,7 @@ setup_claude() {
 main() {
     symlink_dotfiles
     link_cyclone_sysctl_conf
+    link_ime_conf
     setup_claude
 }
 
