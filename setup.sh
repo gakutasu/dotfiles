@@ -12,7 +12,7 @@ symlink_dotfiles() {
 }
 
 link_cyclone_sysctl_conf() {
-    sudo ln -sf "$DOTFILES_DIR/10-cyclone-max.conf" /etc/sysctl.d/10-cyclone-max.conf
+    sudo ln -sf "$DOTFILES_DIR/etc/sysctl.d/10-cyclone-max.conf" /etc/sysctl.d/10-cyclone-max.conf
     sudo sysctl -q --system
 }
 
