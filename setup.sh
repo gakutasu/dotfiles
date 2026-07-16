@@ -39,11 +39,28 @@ setup_claude() {
     sh "$DOTFILES_DIR/.claude/setup.sh"
 }
 
+# Reuse Claude Code settings for Codex CLI.
+# Codex reads global instructions from ~/.codex/AGENTS.md and supports the
+# same Agent Skills format (SKILL.md). ~/.codex/skills also holds
+# Codex-managed system skills (.system), so link each skill individually
+# instead of replacing the whole directory.
+setup_codex() {
+    section "Setting up Codex"
+    CODEX_HOME="$HOME/.codex"
+    mkdir -p "$CODEX_HOME/skills"
+    link "$DOTFILES_DIR/.claude/CLAUDE.md" "$CODEX_HOME/AGENTS.md"
+    for skill in "$DOTFILES_DIR/.claude/skills"/*; do
+        [ -d "$skill" ] || continue
+        link "$skill" "$CODEX_HOME/skills/$(basename "$skill")"
+    done
+}
+
 main() {
     symlink_dotfiles
     link_cyclone_sysctl_conf
     link_ime_conf
     setup_claude
+    setup_codex
     section "Done"
 }
 
