@@ -1,7 +1,4 @@
 {
-  "model": "opus",
-  "language": "japanese",
-  "theme": "dark",
   "permissions": {
     "allow": [
       "Read",
@@ -44,5 +41,41 @@
       "/home/gakutasu/pochi",
       "/home/gakutasu/panda"
     ]
-  }
+  },
+  "model": "claude-fable-5[1m]",
+  "enabledPlugins": {
+    "codex@openai-codex": true,
+    "genshijin@genshijin": true,
+    "superpowers@superpowers-marketplace": true,
+    "dig@kuu-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "genshijin": {
+      "source": {
+        "source": "github",
+        "repo": "InterfaceX-co-jp/genshijin"
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
+    },
+    "kuu-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "fumiya-kume/claude-code"
+      }
+    }
+  },
+  "language": "japanese",
+  "tui": "fullscreen",
+  "theme": "dark"
 }
