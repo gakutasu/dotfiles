@@ -27,8 +27,8 @@ is_mounted() {
 }
 
 is_reachable() {
-    # TCP connect to the SSH port, 2s timeout
-    timeout 2 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null
+    # TCP connect to the SSH port, 1s timeout
+    timeout 1 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null
 }
 
 for target in "${TARGETS[@]}"; do
