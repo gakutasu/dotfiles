@@ -26,6 +26,28 @@ link_cyclone_sysctl_conf() {
     log_ok "sysctl reloaded"
 }
 
+# Link user systemd units and their scripts, then enable timers.
+# Any *.service/*.timer added under .config/systemd/user/ is picked up
+# automatically; timers are enabled, plain services are only linked.
+link_systemd_user_units() {
+    section "Linking systemd user units"
+    mkdir -p "$HOME/.config/systemd/user" "$HOME/.local/bin"
+    for script in "$DOTFILES_DIR/.local/bin"/*; do
+        [ -f "$script" ] || continue
+        link "$script" "$HOME/.local/bin/$(basename "$script")"
+    done
+    for unit in "$DOTFILES_DIR/.config/systemd/user"/*.service "$DOTFILES_DIR/.config/systemd/user"/*.timer; do
+        [ -f "$unit" ] || continue
+        link "$unit" "$HOME/.config/systemd/user/$(basename "$unit")"
+    done
+    systemctl --user daemon-reload
+    for timer in "$DOTFILES_DIR/.config/systemd/user"/*.timer; do
+        [ -f "$timer" ] || continue
+        name="$(basename "$timer")"
+        systemctl --user enable --now "$name" && log_ok "enabled $name"
+    done
+}
+
 # For claude code japanese input
 # Fix missing GTK_IM_MODULE on GNOME so IME preedit shows in VTE terminals
 link_ime_conf() {
@@ -59,6 +81,7 @@ main() {
     symlink_dotfiles
     link_cyclone_sysctl_conf
     link_ime_conf
+    link_systemd_user_units
     setup_claude
     setup_codex
     section "Done"

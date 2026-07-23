@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic sshfs auto-mount check
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=20
+AccuracySec=5
+
+[Install]
+WantedBy=timers.target

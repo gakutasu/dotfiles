@@ -1,0 +1,6 @@
+[Unit]
+Description=Auto-mount/unmount sshfs targets based on reachability
+
+[Service]
+Type=oneshot
+ExecStart=/home/gakutasu/.local/bin/sshfs-auto.sh
