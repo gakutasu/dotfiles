@@ -41,7 +41,12 @@ for target in "${TARGETS[@]}"; do
     if is_reachable "$addr" "${port:-22}"; then
         if ! is_mounted "$mp"; then
             mkdir -p "$mp"
-            sshfs -o "$SSHFS_OPTS" "${host}:" "$mp" \
+            # Run sshfs in its own transient unit, NOT as a child of this
+            # service: systemd kills the whole cgroup when the oneshot unit
+            # exits, which would tear down the mount immediately.
+            # -f keeps sshfs in the foreground so the transient unit tracks it.
+            systemd-run --user --quiet --collect --unit "sshfs-${host}" \
+                sshfs -f -o "$SSHFS_OPTS" "${host}:" "$mp" \
                 && echo "mounted ${host}: -> $mp"
         fi
     else
