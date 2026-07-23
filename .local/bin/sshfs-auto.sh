@@ -40,6 +40,9 @@ for target in "${TARGETS[@]}"; do
 
     if is_reachable "$addr" "${port:-22}"; then
         if ! is_mounted "$mp"; then
+            # A lazily-detached sshfs (reconnect opt) can outlive its mount
+            # and keep the unit name loaded; stop it before mounting again.
+            systemctl --user stop "sshfs-${host}" 2>/dev/null
             mkdir -p "$mp"
             # Run sshfs in its own transient unit, NOT as a child of this
             # service: systemd kills the whole cgroup when the oneshot unit
@@ -51,7 +54,11 @@ for target in "${TARGETS[@]}"; do
         fi
     else
         if is_mounted "$mp"; then
-            fusermount -u -z "$mp" && echo "unmounted $mp (${host} unreachable)"
+            # Stopping the unit terminates sshfs, which tears down the mount;
+            # fall back to fusermount for mounts not owned by a unit.
+            systemctl --user stop "sshfs-${host}" 2>/dev/null
+            is_mounted "$mp" && fusermount -u -z "$mp"
+            echo "unmounted $mp (${host} unreachable)"
         fi
     fi
 done
