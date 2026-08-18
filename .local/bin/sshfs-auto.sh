@@ -27,8 +27,18 @@ is_mounted() {
 }
 
 is_reachable() {
-    # TCP connect to the SSH port, 1s timeout
-    timeout 1 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null
+    # TCP connect AND read the SSH banner. A wedged sshd (host under heavy
+    # load, OOM, etc.) can accept the TCP connection but never send the
+    # banner, which would pass a plain port check and hang sshfs.
+    local banner
+    banner="$(timeout 3 bash -c "exec 3<>/dev/tcp/$1/$2 && IFS= read -r -t 2 line <&3 && printf '%s' \"\$line\"" 2>/dev/null)"
+    [[ "$banner" == SSH-* ]]
+}
+
+is_healthy() {
+    # A mount can go stale (server died mid-session) while still listed in
+    # /proc/mounts; probe it with a timeout so we never hang ourselves.
+    timeout 3 stat -t -- "$1" >/dev/null 2>&1
 }
 
 for target in "${TARGETS[@]}"; do
@@ -37,6 +47,13 @@ for target in "${TARGETS[@]}"; do
     addr="$(resolve_host "$host")"
     port="$(resolve_port "$host")"
     [ -n "$addr" ] || continue
+
+    # Tear down stale mounts first so a recovered host gets remounted below
+    if is_mounted "$mp" && ! is_healthy "$mp"; then
+        systemctl --user stop "sshfs-${host}" 2>/dev/null
+        is_mounted "$mp" && fusermount -u -z "$mp"
+        echo "unmounted stale $mp"
+    fi
 
     if is_reachable "$addr" "${port:-22}"; then
         if ! is_mounted "$mp"; then
@@ -49,8 +66,15 @@ for target in "${TARGETS[@]}"; do
             # exits, which would tear down the mount immediately.
             # -f keeps sshfs in the foreground so the transient unit tracks it.
             systemd-run --user --quiet --collect --unit "sshfs-${host}" \
-                sshfs -f -o "$SSHFS_OPTS" "${host}:" "$mp" \
-                && echo "mounted ${host}: -> $mp"
+                sshfs -f -o "$SSHFS_OPTS" "${host}:" "$mp"
+            # systemd-run only reports that the unit started; sshfs may still
+            # exit right away (e.g. auth failure), so verify the mount itself.
+            sleep 2
+            if is_mounted "$mp"; then
+                echo "mounted ${host}: -> $mp"
+            else
+                echo "mount failed for ${host}: (check ssh auth)"
+            fi
         fi
     else
         if is_mounted "$mp"; then
