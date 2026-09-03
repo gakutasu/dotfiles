@@ -1,0 +1,6 @@
+[Unit]
+Description=Restore ~/.claude/settings.json symlink to dotfiles
+
+[Service]
+Type=oneshot
+ExecStart=/home/gakutasu/.local/bin/claude-settings-relink.sh

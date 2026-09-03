@@ -1,0 +1,12 @@
+[Unit]
+Description=Watch ~/.claude/settings.json and restore the dotfiles symlink
+
+# Watch the directory, not the file: settings.json is normally a symlink, and
+# inotify on a symlink follows it to the dotfiles target, missing the rename
+# that replaces the link. Directory entry changes (rename/create) fire reliably.
+[Path]
+PathChanged=%h/.claude
+Unit=claude-settings-relink.service
+
+[Install]
+WantedBy=default.target

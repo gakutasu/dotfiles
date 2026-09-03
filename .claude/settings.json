@@ -45,27 +45,15 @@
   "model": "claude-fable-5[1m]",
   "enabledPlugins": {
     "codex@openai-codex": true,
+    "dig@kuu-marketplace": true,
     "genshijin@genshijin": true,
-    "superpowers@superpowers-marketplace": true,
-    "dig@kuu-marketplace": true
+    "superpowers@superpowers-marketplace": true
   },
   "extraKnownMarketplaces": {
-    "openai-codex": {
-      "source": {
-        "source": "github",
-        "repo": "openai/codex-plugin-cc"
-      }
-    },
     "genshijin": {
       "source": {
         "source": "github",
         "repo": "InterfaceX-co-jp/genshijin"
-      }
-    },
-    "superpowers-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "obra/superpowers-marketplace"
       }
     },
     "kuu-marketplace": {
@@ -73,9 +61,23 @@
         "source": "github",
         "repo": "fumiya-kume/claude-code"
       }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
     }
   },
   "language": "japanese",
   "tui": "fullscreen",
-  "theme": "dark"
+  "theme": "dark",
+  "agentPushNotifEnabled": true,
+  "remoteControlAtStartup": false
 }
