@@ -9,8 +9,10 @@ DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 . "$DOTFILES_DIR/lib/common.sh"
 
-# Order matters: nodejs before claude (plugin hooks run node), claude before
-# codex (codex reuses the linked Claude Code config).
+# Modules do not depend on each other at setup time; the order only follows
+# runtime needs: the systemd relink unit guards ~/.claude/settings.json before
+# claude links it, plugin hooks run node, and the Claude Code codex plugin
+# calls the codex binary.
 DEFAULT_MODULES="ros2 japanese systemd nodejs claude codex"
 
 symlink_dotfiles() {
