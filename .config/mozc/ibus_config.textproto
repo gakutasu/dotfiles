@@ -1,13 +1,5 @@
-# IBus engine declaration for Mozc, read by `ibus-engine-mozc --xml`.
-# After editing: `ibus write-cache; ibus restart` (modules/japanese.sh does this).
-#
-# Upstream ships `layout : "default"`. GNOME Shell derives the XKB layout from
-# the active input source, and "default" is not a real XKB layout, so on
-# Wayland the keymap silently stayed "us" and the Zenkaku/Hankaku key arrived
-# as `grave`, which Mozc does not bind. On X11 this used to be papered over by
-# `setxkbmap jp`, which never reaches native Wayland clients. Declaring "jp"
-# here makes GNOME apply the jp keymap whenever Mozc is the active source, on
-# Wayland and X11 alike.
+# Mozc engine declaration for IBus. Apply with `ibus write-cache; ibus restart`.
+# layout "jp" (upstream: "default") lets GNOME apply the jp keymap on Wayland too.
 engines {
   name : "mozc-jp"
   longname : "Mozc"
@@ -16,5 +8,4 @@ engines {
   layout_option : ""
   rank : 80
 }
-# Start in direct (alphanumeric) input; Zenkaku/Hankaku switches to hiragana.
 active_on_launch: False
