@@ -27,7 +27,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 ├── setup.sh                        # エントリポイント(ホームのリンク + モジュール実行)
 ├── lib/common.sh                   # 共通関数(ログ、バックアップ付き link、apt、PATH)
 ├── modules/                        # 実行順に記載。すべて再実行可
-│   ├── ros2.sh                     # CycloneDDS 用 sysctl 設定(sudo)
+│   ├── ros2.sh                     # ROS 2 導入
 │   ├── japanese.sh                 # 日本語入力(ibus-mozc、Wayland / X11 両対応)
 │   ├── systemd.sh                  # systemd ユーザーユニット(sshfs 自動マウント、Claude 設定リンク復元)
 │   ├── nodejs.sh                   # Node.js LTS(NodeSource apt、sudo)
@@ -47,6 +47,18 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
     ├── settings.json
     └── skills/                     # /commit, /pr, /issue
 ```
+
+## ROS 2
+
+`modules/ros2.sh` が以下を行う。distro は ROS の apt ソースにある `ros-<distro>-desktop` のうち、rolling を除いてアルファベット順で先頭のもの(その Ubuntu 向けの LTS。noble なら jazzy、resolute なら lyrical)を自動で選ぶ。`ROS_DISTRO=<name>` で上書きできる。
+
+1. locale を en_US.UTF-8 にし、universe と ROS 2 の apt ソース(`ros2-apt-source`)を導入
+2. `ros-<distro>-desktop`、`ros-dev-tools`、`rmw-cyclonedds-cpp`、colcon 拡張(clean / cd / argcomplete)、vcstool を導入
+3. `rosdep init` と `rosdep update`(初回のみ)
+4. ripvcs(`rv`)の最新リリースを `~/.local/bin/rv` に導入
+5. CycloneDDS 用 sysctl 設定を `/etc/sysctl.d` にリンクして適用
+
+`~/cyclonedds.xml` と `~/ros2_alias.sh` は `setup.sh` がリンクし、`.bashrc` が RMW と alias を読み込む。導入後は新しいシェルを開く。
 
 ## Claude Code
 
