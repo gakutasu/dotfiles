@@ -48,12 +48,12 @@ link_systemd_user_units() {
     done
 }
 
-# For claude code japanese input
-# Fix missing GTK_IM_MODULE on GNOME so IME preedit shows in VTE terminals
-link_ime_conf() {
-    section "Linking IME conf"
-    mkdir -p "$HOME/.config/environment.d"
-    link "$DOTFILES_DIR/.config/environment.d/ime.conf" "$HOME/.config/environment.d/ime.conf"
+# Japanese input (ibus + Mozc) for GNOME on both Wayland and X11.
+# Also links ime.conf (GTK_IM_MODULE etc.) so IME preedit works in VTE
+# terminals, which Claude Code needs. See modules/japanese.sh for details.
+setup_japanese() {
+    section "Setting up Japanese input"
+    sh "$DOTFILES_DIR/modules/japanese.sh"
 }
 
 setup_claude() {
@@ -80,7 +80,7 @@ setup_codex() {
 main() {
     symlink_dotfiles
     link_cyclone_sysctl_conf
-    link_ime_conf
+    setup_japanese
     link_systemd_user_units
     setup_claude
     setup_codex

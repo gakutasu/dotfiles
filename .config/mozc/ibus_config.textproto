@@ -1,0 +1,11 @@
+# Mozc engine declaration for IBus. Apply with `ibus write-cache; ibus restart`.
+# layout "jp" (upstream: "default") lets GNOME apply the jp keymap on Wayland too.
+engines {
+  name : "mozc-jp"
+  longname : "Mozc"
+  layout : "jp"
+  layout_variant : ""
+  layout_option : ""
+  rank : 80
+}
+active_on_launch: False
