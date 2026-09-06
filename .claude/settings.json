@@ -42,11 +42,12 @@
       "/home/gakutasu/panda"
     ]
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-fable-5-1[1m]",
   "enabledPlugins": {
     "codex@openai-codex": true,
     "dig@kuu-marketplace": true,
     "genshijin@genshijin": true,
+    "gitkraken-hooks@gitkraken": true,
     "superpowers@superpowers-marketplace": true
   },
   "extraKnownMarketplaces": {
@@ -54,6 +55,12 @@
       "source": {
         "source": "github",
         "repo": "InterfaceX-co-jp/genshijin"
+      }
+    },
+    "gitkraken": {
+      "source": {
+        "source": "directory",
+        "path": "/home/gakutasu/.claude/plugins/marketplaces/gitkraken"
       }
     },
     "kuu-marketplace": {
@@ -76,8 +83,9 @@
     }
   },
   "language": "japanese",
+  "effortLevel": "xhigh",
   "tui": "fullscreen",
   "theme": "dark",
-  "agentPushNotifEnabled": true,
-  "remoteControlAtStartup": false
+  "remoteControlAtStartup": false,
+  "agentPushNotifEnabled": true
 }
