@@ -37,4 +37,8 @@ sh ~/dotfiles/setup.sh
 
 ## Claude Code
 
-`.claude/` を `~/.claude/` にリンクする。同じ設定を Codex CLI(`~/.codex/`)にもリンクする。
+`.claude/` を `~/.claude/` にリンクする。
+
+## Codex
+
+Claude Code と同じ設定を使う。`CLAUDE.md` を `~/.codex/AGENTS.md` に、`skills/` を `~/.codex/skills/` にリンクする。
