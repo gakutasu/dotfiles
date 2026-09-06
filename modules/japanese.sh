@@ -16,18 +16,7 @@ in_graphical_session() {
 
 install_packages() {
     section "Installing ibus-mozc"
-    missing=""
-    for pkg in ibus-mozc mozc-utils-gui; do
-        dpkg -s "$pkg" >/dev/null 2>&1 || missing="$missing $pkg"
-    done
-    if [ -z "$missing" ]; then
-        log_ok "ibus-mozc mozc-utils-gui (already installed)"
-        return
-    fi
-    sudo apt-get update
-    # shellcheck disable=SC2086
-    sudo apt-get install -y $missing
-    log_ok "installed$missing"
+    ensure_apt_packages ibus-mozc mozc-utils-gui
 }
 
 link_configs() {

@@ -19,6 +19,7 @@ log_ok()   { echo "${C_GREEN}ok:${C_RESET}   $1"; }
 log_link() { echo "${C_CYAN}link:${C_RESET} $1"; }
 log_move() { echo "${C_YELLOW}move:${C_RESET} $1"; }
 log_skip() { echo "${C_DIM}skip: $1${C_RESET}"; }
+log_warn() { echo "${C_YELLOW}warn:${C_RESET} $1"; }
 
 # --- Symlinking -------------------------------------------------------------
 # Create a symlink dest -> src, backing up any existing target first.
@@ -48,4 +49,33 @@ link() {
 
     ln -s "$src" "$dest"
     log_link "$dest -> $src"
+}
+
+# --- Packages ---------------------------------------------------------------
+# Install the given apt packages that are not installed yet (needs sudo then).
+ensure_apt_packages() {
+    missing=""
+    for pkg in "$@"; do
+        dpkg -s "$pkg" >/dev/null 2>&1 || missing="$missing $pkg"
+    done
+    if [ -z "$missing" ]; then
+        log_ok "$* (already installed)"
+        return
+    fi
+    sudo apt-get update
+    # shellcheck disable=SC2086
+    sudo apt-get install -y $missing
+    log_ok "installed$missing"
+}
+
+# --- PATH -------------------------------------------------------------------
+# Make sure ~/.local/bin exists and is on PATH for this process. CLI installers
+# check PATH and otherwise append their own export lines to ~/.bashrc, which is
+# a symlink into this repo. ~/.profile already adds ~/.local/bin at login.
+ensure_local_bin_in_path() {
+    mkdir -p "$HOME/.local/bin"
+    case ":$PATH:" in
+        *":$HOME/.local/bin:"*) ;;
+        *) PATH="$HOME/.local/bin:$PATH"; export PATH ;;
+    esac
 }

@@ -1,90 +1,51 @@
 #!/bin/sh
+# Entry point: link home dotfiles, then run the setup modules under modules/.
+# Every module is standalone (sh modules/<name>.sh) and safe to re-run.
+#
+#   sh setup.sh              # run everything
+#   sh setup.sh claude codex # run only the named modules
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 . "$DOTFILES_DIR/lib/common.sh"
 
+# Order matters: claude before codex (codex reuses the linked Claude Code config).
+DEFAULT_MODULES="ros2 japanese systemd claude codex"
+
 symlink_dotfiles() {
     section "Linking home dotfiles"
-    FILES_TO_LINK=".bashrc cyclonedds.xml ros2_alias.sh"
-    for fname in $FILES_TO_LINK; do
+    for fname in .bashrc cyclonedds.xml ros2_alias.sh; do
         link "$DOTFILES_DIR/$fname" "$HOME/$fname"
     done
 }
 
-link_cyclone_sysctl_conf() {
-    section "Linking cyclone sysctl conf (requires sudo)"
-    src="$DOTFILES_DIR/etc/sysctl.d/10-cyclone-max.conf"
-    dest="/etc/sysctl.d/10-cyclone-max.conf"
-    if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
-        log_ok "$dest -> $src (already linked)"
-        return
+# Run each module in its own shell so one failure (e.g. no sudo, offline)
+# does not stop the rest. Failed modules are listed at the end.
+run_modules() {
+    failed=""
+    for name in "$@"; do
+        if [ ! -f "$DOTFILES_DIR/modules/$name.sh" ]; then
+            log_warn "unknown module: $name"
+            failed="$failed $name"
+            continue
+        fi
+        sh "$DOTFILES_DIR/modules/$name.sh" || failed="$failed $name"
+    done
+    section "Done"
+    if [ -n "$failed" ]; then
+        log_warn "failed modules:$failed (retry with: sh setup.sh <name>)"
+        return 1
     fi
-    sudo ln -sf "$src" "$dest"
-    log_link "$dest -> $src"
-    sudo sysctl -q --system
-    log_ok "sysctl reloaded"
-}
-
-# Link user systemd units and their scripts, then enable timers and path units.
-# Any *.service/*.timer/*.path added under .config/systemd/user/ is picked up
-# automatically; timers and path units are enabled, plain services are only linked.
-link_systemd_user_units() {
-    section "Linking systemd user units"
-    mkdir -p "$HOME/.config/systemd/user" "$HOME/.local/bin"
-    for script in "$DOTFILES_DIR/.local/bin"/*; do
-        [ -f "$script" ] || continue
-        link "$script" "$HOME/.local/bin/$(basename "$script")"
-    done
-    for unit in "$DOTFILES_DIR/.config/systemd/user"/*.service "$DOTFILES_DIR/.config/systemd/user"/*.timer "$DOTFILES_DIR/.config/systemd/user"/*.path; do
-        [ -f "$unit" ] || continue
-        link "$unit" "$HOME/.config/systemd/user/$(basename "$unit")"
-    done
-    systemctl --user daemon-reload
-    for unit in "$DOTFILES_DIR/.config/systemd/user"/*.timer "$DOTFILES_DIR/.config/systemd/user"/*.path; do
-        [ -f "$unit" ] || continue
-        name="$(basename "$unit")"
-        systemctl --user enable --now "$name" && log_ok "enabled $name"
-    done
-}
-
-# Japanese input (ibus + Mozc) for GNOME on both Wayland and X11.
-# Also links ime.conf (GTK_IM_MODULE etc.) so IME preedit works in VTE
-# terminals, which Claude Code needs. See modules/japanese.sh for details.
-setup_japanese() {
-    section "Setting up Japanese input"
-    sh "$DOTFILES_DIR/modules/japanese.sh"
-}
-
-setup_claude() {
-    section "Setting up Claude Code"
-    sh "$DOTFILES_DIR/.claude/setup.sh"
-}
-
-# Reuse Claude Code settings for Codex CLI.
-# Codex reads global instructions from ~/.codex/AGENTS.md and supports the
-# same Agent Skills format (SKILL.md). ~/.codex/skills also holds
-# Codex-managed system skills (.system), so link each skill individually
-# instead of replacing the whole directory.
-setup_codex() {
-    section "Setting up Codex"
-    CODEX_HOME="$HOME/.codex"
-    mkdir -p "$CODEX_HOME/skills"
-    link "$DOTFILES_DIR/.claude/CLAUDE.md" "$CODEX_HOME/AGENTS.md"
-    for skill in "$DOTFILES_DIR/.claude/skills"/*; do
-        [ -d "$skill" ] || continue
-        link "$skill" "$CODEX_HOME/skills/$(basename "$skill")"
-    done
 }
 
 main() {
     symlink_dotfiles
-    link_cyclone_sysctl_conf
-    setup_japanese
-    link_systemd_user_units
-    setup_claude
-    setup_codex
-    section "Done"
+    if [ $# -gt 0 ]; then
+        run_modules "$@"
+    else
+        # shellcheck disable=SC2086
+        run_modules $DEFAULT_MODULES
+    fi
 }
 
 main "$@"
