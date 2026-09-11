@@ -10,7 +10,10 @@ TARGETS=(
     "pochi:/home/gakutasu/pochi_robot"
 )
 
-SSHFS_OPTS="reconnect,ServerAliveInterval=5,ServerAliveCountMax=3,follow_symlinks"
+# dir_cache=no: cached readdir returns d_type=DT_UNKNOWN, which makes VS Code's
+# file watcher (@parcel/watcher) skip subdirectories, so open editors never
+# reload after external edits.
+SSHFS_OPTS="reconnect,ServerAliveInterval=5,ServerAliveCountMax=3,follow_symlinks,dir_cache=no"
 
 # Resolve HostName from ~/.ssh/config (ssh -G works offline)
 resolve_host() {
