@@ -31,7 +31,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 │   ├── rtc.sh                      # RTC をローカル時刻に(Windows とのデュアルブート向け)
 │   ├── grub.sh                     # GRUB の初期選択を前回起動したエントリに(Windows とのデュアルブート向け)
 │   ├── git.sh                      # git / git-lfs、.gitconfig リンク、SSH 鍵生成
-│   ├── cli-tools.sh                # fzf、silversearcher-ag、ifmetric
+│   ├── cli-tools.sh                # fzf、silversearcher-ag、ifmetric、sshfs
 │   ├── terminator.sh               # Terminator と設定リンク
 │   ├── chrome.sh                   # Google Chrome(公式 .deb、apt ソースは .deb が登録)
 │   ├── vscode.sh                   # VS Code(Microsoft apt)、python3-venv
