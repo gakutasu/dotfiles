@@ -2,3 +2,7 @@
 
 # Claude Code: never commit credentials
 .claude/.credentials.json
+
+# Claude Code: auto-synced skills cache
+.claude/skills/synced/
+.claude/skills/.trash/
