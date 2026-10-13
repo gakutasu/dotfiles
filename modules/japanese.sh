@@ -1,7 +1,8 @@
 #!/bin/sh
 # Japanese input (ibus + Mozc) for GNOME on Wayland and X11.
 # The jp layout is declared in ~/.config/mozc/ibus_config.textproto instead of
-# setxkbmap, which never reaches native Wayland clients. Safe to re-run.
+# setxkbmap, which never reaches native Wayland clients. Mozc suggestions
+# while typing are turned off. Safe to re-run.
 
 set -eu
 
@@ -24,6 +25,98 @@ link_configs() {
     mkdir -p "$HOME/.config/mozc" "$HOME/.config/environment.d"
     link "$DOTFILES_DIR/.config/mozc/ibus_config.textproto" "$HOME/.config/mozc/ibus_config.textproto"
     link "$DOTFILES_DIR/.config/environment.d/ime.conf" "$HOME/.config/environment.d/ime.conf"
+}
+
+# Rewrite ~/.config/mozc/config1.db (a serialized mozc.config.Config) with the
+# three suggest features off, keeping every other field. Prints "updated" or
+# "unchanged".
+write_mozc_suggest_config() {
+    python3 - <<'PY'
+import os, sys
+
+PATH = os.path.expanduser("~/.config/mozc/config1.db")
+# protocol/config.proto: use_history_suggest, use_dictionary_suggest,
+# use_realtime_conversion (bool, default true; numbers are stable).
+WANT = {100: 0, 101: 0, 102: 0}
+
+def read_varint(buf, i):
+    shift = value = 0
+    while True:
+        byte = buf[i]
+        i += 1
+        value |= (byte & 0x7F) << shift
+        shift += 7
+        if not byte & 0x80:
+            return value, i
+
+def write_varint(value):
+    out = bytearray()
+    while True:
+        byte = value & 0x7F
+        value >>= 7
+        if not value:
+            out.append(byte)
+            return bytes(out)
+        out.append(byte | 0x80)
+
+data = open(PATH, "rb").read() if os.path.exists(PATH) else b""
+kept = bytearray()
+found = {}
+i = 0
+while i < len(data):
+    start = i
+    key, i = read_varint(data, i)
+    field, wire = key >> 3, key & 7
+    if wire == 0:
+        value, i = read_varint(data, i)
+    elif wire == 1:
+        i += 8
+    elif wire == 2:
+        length, i = read_varint(data, i)
+        i += length
+    elif wire == 5:
+        i += 4
+    else:
+        sys.exit(f"unsupported wire type {wire} in {PATH}")
+    if field in WANT and wire == 0:
+        found[field] = value
+    else:
+        kept += data[start:i]
+
+if found == WANT:
+    print("unchanged")
+    sys.exit(0)
+for field, value in WANT.items():
+    kept += write_varint(field << 3) + write_varint(value)
+tmp = PATH + ".tmp"
+with open(tmp, "wb") as f:
+    f.write(kept)
+os.replace(tmp, PATH)
+print("updated")
+PY
+}
+
+# Mozc pops up candidates while typing; with history suggest, dictionary
+# suggest and realtime conversion off they appear only after Space.
+# mozc_server reads the config at start and ibus-engine-mozc relaunches it on
+# the next keystroke, so a changed config just needs the server gone.
+disable_mozc_suggest() {
+    section "Disabling Mozc suggestions while typing"
+    mkdir -p "$HOME/.config/mozc"
+    if ! result="$(write_mozc_suggest_config)"; then
+        log_warn "could not rewrite ~/.config/mozc/config1.db"
+        return 1
+    fi
+    if [ "$result" = "unchanged" ]; then
+        log_ok "mozc suggest already off"
+        return
+    fi
+    if pgrep -x mozc_server >/dev/null 2>&1; then
+        pkill -x mozc_server
+        log_ok "mozc suggest off; mozc_server relaunches on next input"
+    else
+        log_ok "mozc suggest off"
+    fi
 }
 
 # /etc/default/keyboard: used by GDM and non-GNOME X11 sessions.
@@ -112,6 +205,7 @@ reload_ibus() {
 main() {
     install_packages
     link_configs
+    disable_mozc_suggest
     set_system_keymap
     set_im_framework
     set_gnome_input_sources
