@@ -52,20 +52,40 @@ link() {
 }
 
 # --- Packages ---------------------------------------------------------------
-# Install the given apt packages that are not installed yet (needs sudo then).
-ensure_apt_packages() {
-    missing=""
-    for pkg in "$@"; do
-        dpkg -s "$pkg" >/dev/null 2>&1 || missing="$missing $pkg"
-    done
-    if [ -z "$missing" ]; then
-        log_ok "$* (already installed)"
+# Version of an installed package; empty when it is not installed, including
+# when only its config files remain (where dpkg -s still succeeds).
+pkg_version() {
+    dpkg-query -W -f='${db:Status-Status} ${Version}' "$1" 2>/dev/null \
+        | sed -n 's/^installed //p'
+}
+
+# Refresh the apt lists unless apt touched its cache in the last 10 minutes,
+# so a full setup run does not repeat this for every module (needs sudo).
+apt_update() {
+    if [ -n "$(find /var/cache/apt/pkgcache.bin -mmin -10 2>/dev/null)" ]; then
         return
     fi
     sudo apt-get update
-    # shellcheck disable=SC2086
-    sudo apt-get install -y $missing
-    log_ok "installed$missing"
+}
+
+apt_versions() {
+    for pkg in "$@"; do
+        printf '%s=%s ' "$pkg" "$(pkg_version "$pkg")"
+    done
+}
+
+# Install the given apt packages and move the installed ones to the newest
+# version in the apt sources (needs sudo).
+ensure_apt_packages() {
+    apt_update
+    before="$(apt_versions "$@")"
+    sudo apt-get install -y "$@"
+    after="$(apt_versions "$@")"
+    if [ "$before" = "$after" ]; then
+        log_ok "$* (already newest)"
+    else
+        log_ok "now ${after% }"
+    fi
 }
 
 # --- PATH -------------------------------------------------------------------
@@ -78,4 +98,47 @@ ensure_local_bin_in_path() {
         *":$HOME/.local/bin:"*) ;;
         *) PATH="$HOME/.local/bin:$PATH"; export PATH ;;
     esac
+}
+
+# --- Debian packages --------------------------------------------------------
+# Install pkg from the .deb at url with apt (which resolves dependencies).
+# With latest given, an installed pkg is upgraded when it is older than that;
+# without it, an installed pkg is left alone. The download is made
+# world-readable so apt's sandboxed _apt user can open it.
+install_deb_from_url() {
+    deb_pkg="$1"
+    deb_url="$2"
+    deb_latest="${3:-}"
+    deb_installed="$(pkg_version "$deb_pkg")"
+    if [ -n "$deb_installed" ]; then
+        if [ -z "$deb_latest" ]; then
+            log_ok "$deb_pkg $deb_installed (already installed)"
+            return
+        fi
+        if dpkg --compare-versions "$deb_installed" ge "$deb_latest"; then
+            log_ok "$deb_pkg $deb_installed (already newest)"
+            return
+        fi
+    fi
+    # ensure_apt_packages reuses the global pkg variable, hence deb_* names.
+    ensure_apt_packages ca-certificates curl
+    tmpdir="$(mktemp -d)"
+    chmod 755 "$tmpdir"
+    curl -fsSL "$deb_url" -o "$tmpdir/$deb_pkg.deb"
+    chmod 644 "$tmpdir/$deb_pkg.deb"
+    sudo apt-get install -y "$tmpdir/$deb_pkg.deb"
+    rm -rf "$tmpdir"
+    log_ok "$deb_pkg $(pkg_version "$deb_pkg")${deb_installed:+ (was $deb_installed)}"
+}
+
+# --- Snaps ------------------------------------------------------------------
+# Remove the snap of an app that is installed from a .deb instead.
+remove_snap() {
+    name="$1"
+    if ! command -v snap >/dev/null 2>&1 || ! snap list "$name" >/dev/null 2>&1; then
+        log_skip "snap $name not installed"
+        return
+    fi
+    sudo snap remove "$name"
+    log_ok "removed snap $name"
 }
