@@ -8,6 +8,7 @@ set -u
 TARGETS=(
     "albion:/home/gakutasu/albion_robot"
     "pochi:/home/gakutasu/pochi_robot"
+    "orion:/home/gakutasu/orion_robot"
 )
 
 # dir_cache=no: cached readdir returns d_type=DT_UNKNOWN, which makes VS Code's
