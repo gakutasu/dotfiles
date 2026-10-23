@@ -21,4 +21,5 @@
 ## 他の環境へのアクセス
 - `ssh albion`でAlbionのロボット内部に接続可能
 - `ssh pochi`でPochiのロボット内部に接続可能
+- `ssh orion`でorionのロボット内部に接続可能
 - `ssh kachaka03`でkachaka03のロボット内部に接続可能
