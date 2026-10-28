@@ -1,6 +1,6 @@
 #!/bin/sh
 # Command-line tools used from the shell: fzf (its key bindings are sourced by
-# .bashrc), the silver searcher (ag), ifmetric and sshfs (needed by the
+# .bashrc), the silver searcher (ag), htop, ifmetric and sshfs (needed by the
 # sshfs-auto systemd timer). Safe to re-run.
 
 set -eu
@@ -12,7 +12,7 @@ DOTFILES_DIR="$(cd "$MODULE_DIR/.." && pwd)"
 
 install_packages() {
     section "Installing CLI tools"
-    ensure_apt_packages fzf silversearcher-ag ifmetric sshfs
+    ensure_apt_packages fzf silversearcher-ag htop ifmetric sshfs
 }
 
 main() {
