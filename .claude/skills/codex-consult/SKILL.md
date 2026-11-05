@@ -12,15 +12,25 @@ Codex を read-only の相談役として呼び、独立した意見を得る。
 プロンプトは常に stdin で渡し、最終回答は `-o` でファイルに受け取る。
 
 ```bash
-codex exec -s read-only -m <model> -c model_reasoning_effort=<effort> \
-  -C <作業ディレクトリ> -o <scratchpad>/codex-<topic>.md - <<'EOF'
+codex exec --json -s read-only -m <model> -c model_reasoning_effort=<effort> \
+  -C <作業ディレクトリ> -o <scratchpad>/codex-<topic>-1.md - \
+  > <scratchpad>/codex-<topic>-1.jsonl <<'EOF'
 <依頼文>
 EOF
 ```
 
-- `-s read-only` は必須。`--write`、`workspace-write`、`danger-full-access` は使わない
-- 数分以上かかりそうな相談は Bash のバックグラウンド実行にしてターンを終え、完了通知を受けてから `-o` のファイルを読む
-- 同じ論点を続けて議論する場合は 同じ作業ディレクトリで `codex exec resume --last -c 'sandbox_mode="read-only"' -o <file> -` を使う（resume は `-s` を受け付けない）。別の論点では新しく実行する
+- `-s read-only` は必須。`workspace-write`、`danger-full-access` は使わない
+- 原則として Bash の `run_in_background` で実行してターンを終え、完了通知を受けてから `-o` のファイルを読む。`low` の事実確認だけはフォアグラウンドでもよいが、その場合は `timeout: 600000` を指定する（既定の 120 秒では medium 以上の Codex が途中で止まる）
+- 同じ論点を続けて議論する場合は、初回の jsonl の先頭行（`{"type":"thread.started","thread_id":"..."}`）の `thread_id` を使って再開する。`--last` は別のセッションを拾うおそれがあるので使わない。resume は `-s` を受け付けないので、sandbox は `-c` で指定する。モデルと effort は初回と同じにし、`-o` は毎回別のファイルにする
+
+```bash
+codex exec resume <thread_id> -c 'sandbox_mode="read-only"' -m <model> \
+  -c model_reasoning_effort=<effort> -o <scratchpad>/codex-<topic>-2.md - <<'EOF'
+<追加の依頼文>
+EOF
+```
+
+- 別の論点では新しく実行する
 - 編集レビューも同じ `codex exec` を使い、依頼文でレビュー対象（`git diff`、`git diff <base>...HEAD`、対象ファイルなど）を指定する。Codex は read-only でも `git diff` を実行できる。`codex exec review --uncommitted` はカスタムの依頼文と併用できないので使わない
 
 ## モデルと effort
@@ -43,7 +53,7 @@ EOF
 ## 結果の扱い
 
 - **一致**: そのまま進め、Codex も同意したことを一言添える
-- **補足・改善点**: 妥当なら Claude が取り込み、何を取り込んだかを報告する。取り込まない場合も理由を添えて伝える
+- **補足・改善点**: Claude が取り込み、何を取り込んだかを報告する。取り込まない点があれば、それは「意見が割れた」として扱う
 - **意見が割れた**: 該当部分の作業を止め、ユーザーに判断を仰ぐ。割れていない部分は進めてよい
 
 ### 意見が割れたときの報告形式
@@ -64,6 +74,13 @@ Codex の意見: <主張>
 
 - Claude は当事者なので、自分の側に寄せて書かない。両者の主張を同じ詳しさで書き、言葉の強さも揃える
 - 推奨はユーザーに求められたときだけ述べる。その際も当事者であることを明記する
+
+## サブエージェントとして動いているとき
+
+ターンを終えると結果を受け取れず、ユーザーにも直接聞けない。そのため次のように動く。
+
+- Codex はフォアグラウンドで `timeout: 600000` を指定して実行する
+- 意見が割れたら自分で決めず、報告形式のまま親に返す
 
 ## 失敗時
 
