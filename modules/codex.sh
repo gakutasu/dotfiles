@@ -3,7 +3,8 @@
 # Claude Code config. Codex reads global instructions from ~/.codex/AGENTS.md
 # and supports the same Agent Skills format (SKILL.md). ~/.codex/skills also
 # holds Codex-managed system skills (.system), so link each skill individually
-# instead of replacing the whole directory. Safe to re-run.
+# instead of replacing the whole directory. Safe to re-run; re-running updates
+# the CLI.
 
 set -eu
 
@@ -14,20 +15,23 @@ DOTFILES_DIR="$(cd "$MODULE_DIR/.." && pwd)"
 
 CODEX_HOME="$HOME/.codex"
 
-# Installs to ~/.local/bin/codex. To update, re-run the installer:
-#   curl -fsSL https://chatgpt.com/codex/install.sh | sh
+# Installs to ~/.local/bin/codex. The installer runs on every pass: it skips
+# the download when the latest release is already in place and switches to the
+# new release otherwise, so re-running also updates.
 install_codex() {
     section "Installing Codex CLI"
     ensure_local_bin_in_path
-    if command -v codex >/dev/null 2>&1; then
-        log_ok "$(codex --version) (already installed)"
-        return
-    fi
-    ensure_apt_packages curl
+    command -v curl >/dev/null 2>&1 || ensure_apt_packages curl
+    before="$(codex --version 2>/dev/null || true)"
     # CODEX_NON_INTERACTIVE skips prompts. ~/.local/bin is already on PATH, so
     # the installer does not write a PATH block into ~/.bashrc.
     curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
-    log_ok "$(codex --version)"
+    after="$(codex --version)"
+    if [ "$before" = "$after" ]; then
+        log_ok "$after (already newest)"
+    else
+        log_ok "$after${before:+ (was $before)}"
+    fi
 }
 
 link_configs() {

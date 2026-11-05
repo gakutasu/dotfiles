@@ -3,7 +3,8 @@
 # register the marketplaces and install the plugins declared in settings.json.
 # Claude Code records enabledPlugins / extraKnownMarketplaces in settings.json
 # but does not install them on a new machine by itself, so without this step
-# the plugins are enabled yet silently missing. Safe to re-run.
+# the plugins are enabled yet silently missing. Safe to re-run; re-running
+# updates the CLI, the marketplaces and the installed plugins.
 
 set -eu
 
@@ -17,12 +18,17 @@ CLAUDE_HOME="$HOME/.claude"
 SETTINGS="$CLAUDE_DOTFILES_DIR/settings.json"
 
 # Native installer: ~/.local/bin/claude -> ~/.local/share/claude/versions/*.
-# It auto-updates in the background; `claude update` forces a check.
+# It auto-updates in the background; `claude update` forces a check now.
 install_claude() {
     section "Installing Claude Code"
     ensure_local_bin_in_path
     if command -v claude >/dev/null 2>&1; then
-        log_ok "$(claude --version) (already installed)"
+        if out="$(claude update 2>&1)"; then
+            log_cli_result "$out"
+        else
+            log_cli_failure "claude update" "$out"
+        fi
+        log_ok "$(claude --version)"
         return
     fi
     ensure_apt_packages curl
@@ -63,6 +69,16 @@ for name, enabled in settings.get("enabledPlugins", {}).items():
 PY
 }
 
+# One "plugin@marketplace" line per plugin installed at user scope.
+installed_plugins() {
+    claude plugin list --json 2>/dev/null | python3 -c '
+import json, sys
+for plugin in json.load(sys.stdin):
+    if plugin.get("scope") == "user":
+        print(plugin["id"])
+'
+}
+
 # Log the last line of CLI output, minus its "Doing X..." progress prefix.
 log_cli_result() {
     log_ok "$(printf '%s\n' "$1" | tail -n 1 | sed 's/^.*…//; s/^.*\.\.\.//')"
@@ -85,22 +101,38 @@ add_marketplaces() {
     done
 }
 
+update_marketplaces() {
+    section "Updating plugin marketplaces"
+    if out="$(claude plugin marketplace update 2>&1)"; then
+        log_cli_result "$out"
+    else
+        log_cli_failure "marketplace update" "$out"
+    fi
+}
+
 install_plugins() {
-    section "Installing enabled plugins"
+    section "Installing or updating enabled plugins"
+    installed="$(installed_plugins || true)"
     for plugin in $(enabled_plugins); do
-        if out="$(claude plugin install "$plugin" 2>&1)"; then
+        if printf '%s\n' "$installed" | grep -qxF "$plugin"; then
+            action=update
+        else
+            action=install
+        fi
+        if out="$(claude plugin "$action" --scope user "$plugin" 2>&1)"; then
             log_cli_result "$out"
         else
-            log_cli_failure "plugin $plugin" "$out"
+            log_cli_failure "plugin $action $plugin" "$out"
         fi
     done
-    log_ok "restart Claude Code (or run /reload-plugins) to load new plugins"
+    log_ok "restart Claude Code (or run /reload-plugins) to load new or updated plugins"
 }
 
 main() {
     install_claude
     link_configs
     add_marketplaces
+    update_marketplaces
     install_plugins
 }
 

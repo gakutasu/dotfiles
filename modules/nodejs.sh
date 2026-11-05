@@ -3,7 +3,7 @@
 # Needed at runtime by Claude Code plugin hooks (e.g. genshijin runs node) and
 # by npm/npx based MCP servers. The LTS major is resolved from nodejs.org on
 # every run, so re-running after a new LTS line ships (October of even years)
-# moves to it; patch releases within a line arrive through apt upgrade.
+# moves to it, and the newest patch release of the line is installed too.
 # Safe to re-run.
 
 set -eu
@@ -71,11 +71,7 @@ SRC
 
 install_nodejs() {
     section "Installing Node.js"
-    if [ "$(installed_node_major || true)" = "$NODE_MAJOR" ]; then
-        log_ok "node $(node -v) (already installed)"
-        return
-    fi
-    sudo apt-get install -y nodejs
+    ensure_apt_packages nodejs
     log_ok "node $(node -v), npm $(npm -v)"
 }
 
