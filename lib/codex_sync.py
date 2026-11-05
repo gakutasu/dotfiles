@@ -103,6 +103,12 @@ def enabled_plugins(settings):
     for plugin_id, enabled in settings.get("enabledPlugins", {}).items():
         if not enabled:
             continue
+        if plugin_id in EXCLUDED_PLUGINS:
+            emit("skip", f"plugin {plugin_id} (excluded: Claude Code only)")
+            continue
+        if plugin_id in NATIVE_PLUGINS:
+            emit("skip", f"plugin {plugin_id} (installed natively as {NATIVE_PLUGINS[plugin_id]})")
+            continue
         entries = installed.get(plugin_id, [])
         entry = next((e for e in entries if e.get("scope") == "user"), None)
         entry = entry or (entries[0] if entries else None)
@@ -394,7 +400,9 @@ def sync_native_plugins(settings, previous):
             emit("ok", f"plugin {plugin} installed")
             managed.append(plugin)
         else:
-            emit("warn", f"codex plugin add {plugin} failed: {(result.stderr or result.stdout).strip()}")
+            detail = (result.stderr or result.stdout).strip().splitlines()[-1:] or [""]
+            emit("warn", f"codex plugin add {plugin} failed: {detail[0]} "
+                 "(if logged out: codex login, then sh setup.sh codex)")
     for plugin in sorted(set(previous) - wanted):
         if plugin in installed:
             result = codex("plugin", "remove", plugin)
@@ -409,14 +417,7 @@ def main():
     settings = load_json(dotfiles / ".claude" / "settings.json", {})
     previous = load_json(MANIFEST, {})
 
-    plugins = []
-    for plugin in enabled_plugins(settings):
-        if plugin.id in EXCLUDED_PLUGINS:
-            emit("skip", f"plugin {plugin.id} (excluded: Claude Code only)")
-        elif plugin.id in NATIVE_PLUGINS:
-            emit("skip", f"plugin {plugin.id} (installed natively as {NATIVE_PLUGINS[plugin.id]})")
-        else:
-            plugins.append(plugin)
+    plugins = list(enabled_plugins(settings))
 
     cleanup_legacy_skills(dotfiles)
     manifest = {
