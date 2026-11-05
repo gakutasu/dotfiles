@@ -39,7 +39,7 @@ install_claude() {
 link_configs() {
     section "Linking Claude Code config"
     mkdir -p "$CLAUDE_HOME"
-    for item in CLAUDE.md settings.json skills; do
+    for item in CLAUDE.md settings.json skills rules; do
         link "$CLAUDE_DOTFILES_DIR/$item" "$CLAUDE_HOME/$item"
     done
 }

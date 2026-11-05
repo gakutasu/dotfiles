@@ -60,7 +60,8 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 └── .claude/                        # Claude Code 設定
     ├── CLAUDE.md
     ├── settings.json
-    └── skills/                     # /commit, /pr, /issue
+    ├── rules/                      # Claude Code 専用ルール(Codex には渡さない)
+    └── skills/                     # /commit, /pr, /issue, codex-consult
 ```
 
 ## デスクトップアプリ
