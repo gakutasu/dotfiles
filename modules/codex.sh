@@ -1,10 +1,11 @@
 #!/bin/sh
-# Codex CLI: install the standalone binary (no Node.js needed) and reuse the
-# Claude Code config. Codex reads global instructions from ~/.codex/AGENTS.md
-# and supports the same Agent Skills format (SKILL.md). ~/.codex/skills also
-# holds Codex-managed system skills (.system), so link each skill individually
-# instead of replacing the whole directory. Safe to re-run; re-running updates
-# the CLI.
+# Codex CLI: install the standalone binary (no Node.js needed) and mirror the
+# Claude Code setup into it, one way (Claude -> Codex). ~/.codex/AGENTS.md links
+# to the shared CLAUDE.md; lib/codex_sync.py regenerates skills, hooks,
+# permission rules and native plugins from the current Claude state. Run after
+# the claude module, whose installed plugins it reads. Safe to re-run;
+# re-running updates the CLI and picks up skills, hooks or plugins added to
+# Claude Code since the last run.
 
 set -eu
 
@@ -36,12 +37,26 @@ install_codex() {
 
 link_configs() {
     section "Linking Codex config"
-    mkdir -p "$CODEX_HOME/skills"
+    mkdir -p "$CODEX_HOME"
     link "$DOTFILES_DIR/.claude/CLAUDE.md" "$CODEX_HOME/AGENTS.md"
-    for skill in "$DOTFILES_DIR/.claude/skills"/*; do
-        [ -d "$skill" ] || continue
-        link "$skill" "$CODEX_HOME/skills/$(basename "$skill")"
+}
+
+sync_from_claude() {
+    section "Syncing Claude Code skills, hooks, rules and plugins"
+    tab="$(printf '\t')"
+    status=0
+    out="$(python3 "$DOTFILES_DIR/lib/codex_sync.py" "$DOTFILES_DIR")" || status=$?
+    printf '%s\n' "$out" | while IFS="$tab" read -r level msg; do
+        [ -n "$level" ] || continue
+        case "$level" in
+            ok) log_ok "$msg" ;;
+            link) log_link "$msg" ;;
+            move) log_move "$msg" ;;
+            skip) log_skip "$msg" ;;
+            *) log_warn "$msg" ;;
+        esac
     done
+    return "$status"
 }
 
 show_login_status() {
@@ -57,6 +72,7 @@ show_login_status() {
 main() {
     install_codex
     link_configs
+    sync_from_claude
     show_login_status
 }
 

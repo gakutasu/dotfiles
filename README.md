@@ -27,6 +27,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 .
 ├── setup.sh                        # エントリポイント(ホームのリンク + モジュール実行)
 ├── lib/common.sh                   # 共通関数(ログ、バックアップ付き link、apt 導入 / 更新、.deb 導入、snap 削除、PATH)
+├── lib/codex_sync.py               # Claude Code の設定を Codex に同期(codex.sh から実行)
 ├── modules/                        # 実行順に記載。すべて再実行可
 │   ├── rtc.sh                      # RTC をローカル時刻に(Windows とのデュアルブート向け)
 │   ├── grub.sh                     # GRUB の初期選択を前回起動したエントリに(Windows とのデュアルブート向け)
@@ -44,7 +45,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 │   ├── systemd.sh                  # systemd ユーザーユニット(sshfs 自動マウント、Claude 設定リンク復元)
 │   ├── nodejs.sh                   # Node.js LTS(NodeSource apt、sudo)
 │   ├── claude.sh                   # Claude Code CLI、設定リンク、プラグイン導入
-│   └── codex.sh                    # Codex CLI、Claude Code 設定の流用
+│   └── codex.sh                    # Codex CLI、Claude Code 設定の同期
 ├── .bashrc
 ├── .gitconfig                      # git 設定(user、editor、lfs)
 ├── ros2_alias.sh                   # ROS 2 用シェル関数
@@ -97,6 +98,14 @@ Claude Code は `enabledPlugins` を settings.json に書き込むが、新し�
 
 ## Codex
 
-`modules/codex.sh` が公式インストーラで CLI を `~/.local/bin/codex` に導入し、Claude Code と同じ設定を使う。
-`CLAUDE.md` を `~/.codex/AGENTS.md` に、`skills/` の各スキルを `~/.codex/skills/` にリンクする。
+`modules/codex.sh` が公式インストーラで CLI を `~/.local/bin/codex` に導入し、Claude Code の設定を Codex に一方向で同期する(Claude → Codex)。
+`CLAUDE.md` は `~/.codex/AGENTS.md` にリンクし、残りは `lib/codex_sync.py` が Claude 側の現状から毎回作り直す。
+
+- スキル: dotfiles の `skills/` と有効プラグインのスキルを `~/.agents/skills/` にリンク。プラグインのコマンドはスキルに変換して生成
+- フック: `settings.json` と有効プラグインのフックを `~/.codex/hooks.json` に統合。変更後は Codex 内の `/hooks` で一度承認が必要
+- 権限: `permissions` の `Bash(xxx *)` を `~/.codex/rules/claude.rules` の `prefix_rule` に変換。完全一致(`Bash(python3)` など)は前方一致にすると許可範囲が広がるため変換しない
+- プラグイン: Codex 公式版があるもの(`NATIVE_PLUGINS`、現状 superpowers)は Codex 側にネイティブ導入し、Claude 専用のもの(`EXCLUDED_PLUGINS`、codex プラグイン)は除外
+
+作成物は `~/.codex/claude-sync.json` に記録し、Claude 側から消えたものは次回実行時に削除する。記録にないファイルには触れない。
+プラグインの導入先を読むため、`claude.sh` の後に実行する。スキル・フック・プラグインを追加したら `sh setup.sh codex` で反映する。
 未ログインなら `codex login` を案内する。
