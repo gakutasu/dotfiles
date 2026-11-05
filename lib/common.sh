@@ -59,10 +59,13 @@ pkg_version() {
         | sed -n 's/^installed //p'
 }
 
-# Refresh the apt lists unless apt touched its cache in the last 10 minutes,
-# so a full setup run does not repeat this for every module (needs sudo).
+# Refresh the apt lists unless they were refreshed in the last 10 minutes, so
+# a full setup run does not repeat this for every module (needs sudo). The
+# stamp is touched after every successful apt-get update (15update-stamp);
+# pkgcache.bin is not used because installing a package also rewrites it.
+APT_UPDATE_STAMP=/var/lib/apt/periodic/update-success-stamp
 apt_update() {
-    if [ -n "$(find /var/cache/apt/pkgcache.bin -mmin -10 2>/dev/null)" ]; then
+    if [ -n "$(find "$APT_UPDATE_STAMP" -mmin -10 2>/dev/null)" ]; then
         return
     fi
     sudo apt-get update

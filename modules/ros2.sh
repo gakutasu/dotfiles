@@ -78,6 +78,8 @@ enable_universe() {
 }
 
 # packages.ros.org via the ros2-apt-source package (keyring + sources list).
+# The first install comes from GitHub; packages.ros.org also serves the
+# package, so install_ros_packages keeps it (and its keyring) up to date.
 install_ros_apt_source() {
     section "Installing the ROS 2 apt source (requires sudo)"
     if dpkg -s ros2-apt-source >/dev/null 2>&1; then
@@ -107,6 +109,7 @@ install_ros_apt_source() {
 install_ros_packages() {
     section "Installing ROS 2 $distro packages (requires sudo)"
     ensure_apt_packages \
+        ros2-apt-source \
         ros-dev-tools \
         "ros-$distro-desktop" \
         "ros-$distro-rmw-cyclonedds-cpp" \
@@ -124,11 +127,10 @@ init_rosdep() {
         sudo rosdep init
         log_ok "rosdep initialized"
     fi
-    if [ -d "$HOME/.ros/rosdep/sources.cache" ]; then
-        log_ok "rosdep cache (already present; refresh with: rosdep update)"
-        return
+    if ! rosdep update; then
+        log_warn "rosdep update failed (offline?)"
+        return 1
     fi
-    rosdep update
     log_ok "rosdep cache updated"
 }
 
