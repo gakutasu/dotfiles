@@ -60,6 +60,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 └── .claude/                        # Claude Code 設定
     ├── CLAUDE.md
     ├── settings.json
+    ├── agents/                     # Claude Code 専用サブエージェント(Codex 相談の中継役)
     ├── rules/                      # Claude Code 専用ルール(Codex には渡さない)
     └── skills/                     # /commit, /pr, /issue, codex-consult
 ```
