@@ -46,8 +46,8 @@ NATIVE_PLUGINS = {
 EXCLUDED_PLUGINS = {
     "codex@openai-codex",  # bridge from Claude Code to Codex itself
 }
-# Dotfiles skill directories that are not skills.
-EXCLUDED_DOTFILES_SKILLS = {"synced"}
+# Dotfiles skill directories not mirrored to Codex (non-skills and Claude-only skills).
+EXCLUDED_DOTFILES_SKILLS = {"synced", "codex-consult"}
 
 CODEX_HOOK_EVENTS = {
     "SessionStart", "SessionEnd", "SubagentStart", "SubagentStop",
