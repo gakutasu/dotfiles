@@ -31,6 +31,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 ├── modules/                        # 実行順に記載。すべて再実行可
 │   ├── rtc.sh                      # RTC をローカル時刻に(Windows とのデュアルブート向け)
 │   ├── grub.sh                     # GRUB の初期選択を前回起動したエントリに(Windows とのデュアルブート向け)
+│   ├── network.sh                  # Wi-Fi の省電力を無効化(NetworkManager の conf.d にリンク)
 │   ├── git.sh                      # git / git-lfs、.gitconfig リンク、SSH 鍵生成
 │   ├── cli-tools.sh                # fzf、silversearcher-ag、ifmetric、sshfs、nmap、arp-scan、avahi-utils、nbtscan
 │   ├── terminator.sh               # Terminator と設定リンク
@@ -50,6 +51,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 ├── .gitconfig                      # git 設定(user、editor、lfs)
 ├── ros2_alias.sh                   # ROS 2 用シェル関数
 ├── cyclonedds.xml                  # CycloneDDS 設定
+├── etc/NetworkManager/conf.d/wifi-powersave-off.conf
 ├── etc/sysctl.d/10-cyclone-max.conf
 ├── .config/
 │   ├── environment.d/ime.conf      # IME 環境変数

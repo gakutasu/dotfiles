@@ -14,7 +14,7 @@ DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 # claude links it, plugin hooks run node, and the Claude Code codex plugin
 # calls the codex binary. git comes early so its interactive ssh-keygen prompt
 # is reached before the long installs.
-DEFAULT_MODULES="rtc grub git cli-tools terminator chrome vscode slack gitkraken vlc simplescreenrecorder ros2 japanese systemd nodejs claude codex"
+DEFAULT_MODULES="rtc grub network git cli-tools terminator chrome vscode slack gitkraken vlc simplescreenrecorder ros2 japanese systemd nodejs claude codex"
 
 symlink_dotfiles() {
     section "Linking home dotfiles"
