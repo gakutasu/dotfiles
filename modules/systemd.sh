@@ -49,11 +49,11 @@ enable_units() {
 }
 
 apply_vscode_pets_patch() {
-    section "Applying vscode-pets default pets patch"
+    section "Applying vscode-pets defaults patch"
     if "$DOTFILES_DIR/.local/bin/vscode-pets-default-patch.sh"; then
-        log_ok "vscode-pets default pets patch"
+        log_ok "vscode-pets defaults patch"
     else
-        log_warn "vscode-pets default pets patch failed"
+        log_warn "vscode-pets defaults patch failed"
     fi
 }
 

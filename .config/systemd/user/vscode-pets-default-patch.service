@@ -1,5 +1,5 @@
 [Unit]
-Description=Patch vscode-pets to start new workspaces with the default pets
+Description=Patch vscode-pets defaults (starting pets and pet size)
 
 [Service]
 Type=oneshot
