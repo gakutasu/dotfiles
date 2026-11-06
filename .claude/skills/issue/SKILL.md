@@ -79,7 +79,7 @@ description: 現在のセッション中に起きた問題を GitHub issue と�
 
    **複数ある場合は問題の内容に合うものを自分で選ぶ**（後述）
 
-3. **デフォルト構成**（上記どちらも存在しない場合）
+3. **デフォルト構成**（上記どちらも存在しない場合）。英語で書く場合は見出しも英語にする（Summary / Steps to Reproduce / Expected Behavior / Actual Behavior / Environment / Additional Context）
 
 ```
 ## 概要
@@ -121,8 +121,9 @@ description: 現在のセッション中に起きた問題を GitHub issue と�
 
 ```
 ---
-タイトル: <英語タイトル>
+タイトル: <タイトル>
 リポジトリ: <org>/<repo>
+言語: <日本語 / 英語>（判定根拠: <例: sbgisen のリポジトリ / 直近の PR・issue に日本語の投稿なし>）
 ラベル: <該当する場合のみ>
 
 <テンプレートを埋めたボディ>
@@ -130,8 +131,11 @@ description: 現在のセッション中に起きた問題を GitHub issue と�
 この issue を投稿しますか？
 ```
 
-- **タイトルは英語**（例: `Crash when running migration with empty config`, `Docs: setup guide missing Node version requirement`）
-- **ボディは日本語**でテンプレートを埋めること。**文体は常体（だ・である調）とし、ですます調は使用しないこと**（例: ×「クラッシュします」 → ○「クラッシュする」）
+- **タイトル・本文の言語**は、投稿先リポジトリで判定する。タイトルと本文は同じ言語で書く
+  - owner が `sbgisen` または `gakutasu` → 日本語
+  - それ以外の外部リポジトリ → CONTRIBUTING やテンプレートに言語の指定があればそれに従う。なければ `gh issue list --repo <org>/<repo> --state all --limit 20 --json title,body,author` と `gh pr list --repo <org>/<repo> --state all --limit 20 --json title,body,author` で最近の投稿を確認し、bot・定型文・コード・ログ・引用を除いた人の文章に仮名を含む日本語があれば日本語、なければ英語（漢字が含まれるだけでは日本語と判断しない）。1件もない場合や取得に失敗した場合は英語
+- タイトルの例: 日本語 `空の設定でマイグレーションを実行するとクラッシュする`、英語 `Crash when running migration with empty config`
+- 日本語の場合、**文体は常体（だ・である調）とし、ですます調は使用しないこと**（例: ×「クラッシュします」 → ○「クラッシュする」）
 - 再現手順・エラーメッセージは**セッション中に実際に観測したもの**をそのまま使うこと（捏造しない）
 - 機密情報（トークン、パス、個人情報等）が含まれていないか目視で確認すること
 - 関連する PR / issue がある場合は本文に記載すること（例: `関連: #123`）
@@ -158,7 +162,7 @@ issue 本文を書き直し、修正後の内容を**再度ユーザーに提示
 ユーザーの承認を得た後にのみ実行する。
 
 ```
-gh issue create --title "<英語タイトル>" --body "$(cat <<'EOF'
+gh issue create --title "<タイトル>" --body "$(cat <<'EOF'
 <テンプレートを埋めたボディ>
 EOF
 )"
