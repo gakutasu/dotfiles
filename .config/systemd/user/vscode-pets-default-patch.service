@@ -1,5 +1,5 @@
 [Unit]
-Description=Patch vscode-pets defaults (starting pets and pet size)
+Description=Patch vscode-pets defaults (starting pets and settings)
 
 [Service]
 Type=oneshot
