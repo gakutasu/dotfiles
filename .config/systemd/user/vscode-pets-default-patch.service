@@ -1,0 +1,6 @@
+[Unit]
+Description=Patch vscode-pets to start new workspaces with the default pets
+
+[Service]
+Type=oneshot
+ExecStart=/home/gakutasu/.local/bin/vscode-pets-default-patch.sh

@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch ~/.vscode/extensions and re-apply the vscode-pets default pets patch
+
+[Path]
+PathChanged=%h/.vscode/extensions
+Unit=vscode-pets-default-patch.service
+
+[Install]
+WantedBy=default.target

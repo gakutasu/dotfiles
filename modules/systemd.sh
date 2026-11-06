@@ -3,6 +3,8 @@
 # scripts they run under .local/bin/, then enable timers and path units.
 # Any *.service/*.timer/*.path added there is picked up automatically; timers
 # and path units are enabled, plain services are only linked. Safe to re-run.
+# Path units with PathChanged= only fire on later changes, so the vscode-pets
+# patch is also applied once here for extensions installed before this runs.
 
 set -eu
 
@@ -46,10 +48,20 @@ enable_units() {
     done
 }
 
+apply_vscode_pets_patch() {
+    section "Applying vscode-pets default pets patch"
+    if "$DOTFILES_DIR/.local/bin/vscode-pets-default-patch.sh"; then
+        log_ok "vscode-pets default pets patch"
+    else
+        log_warn "vscode-pets default pets patch failed"
+    fi
+}
+
 main() {
     link_scripts
     link_units
     enable_units
+    apply_vscode_pets_patch
 }
 
 main "$@"

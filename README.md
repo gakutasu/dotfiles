@@ -42,7 +42,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 │   ├── simplescreenrecorder.sh     # SimpleScreenRecorder
 │   ├── ros2.sh                     # ROS 2 導入
 │   ├── japanese.sh                 # 日本語入力(ibus-mozc、Wayland / X11 両対応、入力中サジェスト無効)
-│   ├── systemd.sh                  # systemd ユーザーユニット(sshfs 自動マウント、Claude 設定リンク復元)
+│   ├── systemd.sh                  # systemd ユーザーユニット(sshfs 自動マウント、Claude 設定リンク復元、vscode-pets パッチ)
 │   ├── nodejs.sh                   # Node.js LTS(NodeSource apt、sudo)
 │   ├── claude.sh                   # Claude Code CLI、設定リンク、プラグイン導入
 │   └── codex.sh                    # Codex CLI、Claude Code 設定の同期
@@ -54,7 +54,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 ├── .config/
 │   ├── environment.d/ime.conf      # IME 環境変数
 │   ├── mozc/ibus_config.textproto  # Mozc エンジン宣言
-│   ├── systemd/user/               # sshfs 自動マウント、Claude 設定リンク復元
+│   ├── systemd/user/               # sshfs 自動マウント、Claude 設定リンク復元、vscode-pets パッチ
 │   └── terminator/config           # Terminator 設定(透過背景、無限スクロールバック)
 ├── .local/bin/                     # systemd ユニットから呼ぶスクリプト
 └── .claude/                        # Claude Code 設定
