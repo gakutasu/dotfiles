@@ -17,7 +17,6 @@
       "Bash(ls *)",
       "Bash(ls)",
       "Bash(pwd)",
-      "Bash(python3)",
       "Bash(ros2 component *)",
       "Bash(ros2 param *)",
       "Bash(ros2 topic *)",
@@ -35,6 +34,7 @@
     "additionalDirectories": [
       "/home/gakutasu/.claude/skills",
       "/home/gakutasu/.claude/commands",
+      "/home/gakutasu/dotfiles",
       "/home/gakutasu/ros",
       "/home/gakutasu/soar",
       "/home/gakutasu/albion",
@@ -42,7 +42,6 @@
       "/home/gakutasu/panda"
     ]
   },
-  "model": "claude-fable-5-1[1m]",
   "enabledPlugins": {
     "codex@openai-codex": true,
     "dig@kuu-marketplace": true,
@@ -76,9 +75,9 @@
     }
   },
   "language": "japanese",
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "tui": "fullscreen",
   "theme": "dark",
-  "remoteControlAtStartup": false,
+  "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true
 }
