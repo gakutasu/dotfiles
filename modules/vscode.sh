@@ -39,7 +39,7 @@ SRC
         sudo rm -f "$LEGACY_LIST"
         log_move "removed legacy $LEGACY_LIST"
     fi
-    sudo apt-get update
+    apt_get update
     log_ok "$SOURCES"
 }
 

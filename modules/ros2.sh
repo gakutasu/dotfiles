@@ -97,11 +97,11 @@ install_ros_apt_source() {
     chmod 755 "$tmpdir"
     curl -fsSL -o "$tmpdir/$deb" \
         "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${version}/${deb}"
-    sudo apt-get install -y "$tmpdir/$deb"
+    apt_get install -y "$tmpdir/$deb"
     rm -rf "$tmpdir"
     log_ok "ros2-apt-source $version installed"
     # Fetch the packages.ros.org lists now: select_ros_distro reads them.
-    sudo apt-get update
+    apt_get update
 }
 
 # colcon-cd, colcon-argcomplete and vcstool provide the completion files
@@ -124,10 +124,10 @@ init_rosdep() {
     if [ -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
         log_ok "rosdep sources (already initialized)"
     else
-        sudo rosdep init
+        sudo rosdep init -q
         log_ok "rosdep initialized"
     fi
-    if ! rosdep update; then
+    if ! rosdep update -q; then
         log_warn "rosdep update failed (offline?)"
         return 1
     fi

@@ -65,7 +65,7 @@ Suites: nodistro
 Components: main
 Signed-By: $KEYRING
 SRC
-    sudo apt-get update
+    apt_get update
     log_ok "$SOURCES -> Node.js $NODE_MAJOR"
 }
 

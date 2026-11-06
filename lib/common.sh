@@ -52,6 +52,13 @@ link() {
 }
 
 # --- Packages ---------------------------------------------------------------
+# apt-get with only errors printed: -qq drops the package lists, progress and
+# summaries (dpkg's own unpack/setup lines still show), and HideAutoRemove
+# drops the "no longer required" list. Callers log what changed themselves.
+apt_get() {
+    sudo apt-get -qq -o APT::Get::HideAutoRemove=true "$@"
+}
+
 # Version of an installed package; empty when it is not installed, including
 # when only its config files remain (where dpkg -s still succeeds).
 pkg_version() {
@@ -68,7 +75,7 @@ apt_update() {
     if [ -n "$(find "$APT_UPDATE_STAMP" -mmin -10 2>/dev/null)" ]; then
         return
     fi
-    sudo apt-get update
+    apt_get update
 }
 
 apt_versions() {
@@ -82,7 +89,7 @@ apt_versions() {
 ensure_apt_packages() {
     apt_update
     before="$(apt_versions "$@")"
-    sudo apt-get install -y "$@"
+    apt_get install -y "$@"
     after="$(apt_versions "$@")"
     if [ "$before" = "$after" ]; then
         log_ok "$* (already newest)"
@@ -129,7 +136,7 @@ install_deb_from_url() {
     chmod 755 "$tmpdir"
     curl -fsSL "$deb_url" -o "$tmpdir/$deb_pkg.deb"
     chmod 644 "$tmpdir/$deb_pkg.deb"
-    sudo apt-get install -y "$tmpdir/$deb_pkg.deb"
+    apt_get install -y "$tmpdir/$deb_pkg.deb"
     rm -rf "$tmpdir"
     log_ok "$deb_pkg $(pkg_version "$deb_pkg")${deb_installed:+ (was $deb_installed)}"
 }
