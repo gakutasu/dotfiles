@@ -4,9 +4,11 @@
 # Invoked periodically by sshfs-auto.timer (systemd user unit).
 set -u
 
-# "ssh_config_host:mountpoint" pairs. Add new hosts here.
+# "ssh_config_host[,fallback_host...]:mountpoint" pairs. Add new hosts here.
+# Hosts are tried in order and the first reachable one gets mounted, so list
+# alternative routes to the same machine (e.g. LAN, then VPN) on one line.
 TARGETS=(
-    "albion:/home/gakutasu/albion_robot"
+    "albion,albion-vpn:/home/gakutasu/albion_robot"
     "pochi:/home/gakutasu/pochi_robot"
     "orion:/home/gakutasu/orion_robot"
 )
@@ -45,49 +47,70 @@ is_healthy() {
     timeout 3 stat -t -- "$1" >/dev/null 2>&1
 }
 
+mounted_host() {
+    # sshfs lists its mount source as "host:"
+    awk -v mp="$1" '$2 == mp {sub(/:.*/, "", $1); print $1; exit}' /proc/mounts
+}
+
+# Exit status: 0 reachable, 1 unreachable, 2 unresolvable
+probe_host() {
+    local addr port
+    addr="$(resolve_host "$1")"
+    port="$(resolve_port "$1")"
+    [ -n "$addr" ] || return 2
+    is_reachable "$addr" "${port:-22}"
+}
+
+unmount() {
+    # Stopping the unit terminates sshfs, which tears down the mount;
+    # fall back to fusermount for mounts not owned by a unit.
+    systemctl --user stop "$1" 2>/dev/null
+    is_mounted "$2" && fusermount -u -z "$2"
+}
+
 for target in "${TARGETS[@]}"; do
-    host="${target%%:*}"
+    IFS=, read -ra hosts <<< "${target%%:*}"
     mp="${target#*:}"
-    addr="$(resolve_host "$host")"
-    port="$(resolve_port "$host")"
-    [ -n "$addr" ] || continue
+    # One unit per mountpoint, named after the primary host
+    unit="sshfs-${hosts[0]}"
 
     # Tear down stale mounts first so a recovered host gets remounted below
     if is_mounted "$mp" && ! is_healthy "$mp"; then
-        systemctl --user stop "sshfs-${host}" 2>/dev/null
-        is_mounted "$mp" && fusermount -u -z "$mp"
+        unmount "$unit" "$mp"
         echo "unmounted stale $mp"
     fi
 
-    if is_reachable "$addr" "${port:-22}"; then
-        if ! is_mounted "$mp"; then
-            # A lazily-detached sshfs (reconnect opt) can outlive its mount
-            # and keep the unit name loaded; stop it before mounting again.
-            systemctl --user stop "sshfs-${host}" 2>/dev/null
-            mkdir -p "$mp"
-            # Run sshfs in its own transient unit, NOT as a child of this
-            # service: systemd kills the whole cgroup when the oneshot unit
-            # exits, which would tear down the mount immediately.
-            # -f keeps sshfs in the foreground so the transient unit tracks it.
-            systemd-run --user --quiet --collect --unit "sshfs-${host}" \
-                sshfs -f -o "$SSHFS_OPTS" "${host}:" "$mp"
-            # systemd-run only reports that the unit started; sshfs may still
-            # exit right away (e.g. auth failure), so verify the mount itself.
-            sleep 2
-            if is_mounted "$mp"; then
-                echo "mounted ${host}: -> $mp"
-            else
-                echo "mount failed for ${host}: (check ssh auth)"
-            fi
-        fi
-    else
-        if is_mounted "$mp"; then
-            # Stopping the unit terminates sshfs, which tears down the mount;
-            # fall back to fusermount for mounts not owned by a unit.
-            systemctl --user stop "sshfs-${host}" 2>/dev/null
-            is_mounted "$mp" && fusermount -u -z "$mp"
-            echo "unmounted $mp (${host} unreachable)"
-        fi
+    current="$(mounted_host "$mp")"
+    if [ -n "$current" ]; then
+        # Keep the mount while its host is reachable, and also when the host
+        # cannot be resolved (e.g. ssh config broken mid-edit). A working
+        # mount is never switched to a higher-priority host.
+        probe_host "$current"
+        [ $? -eq 1 ] || continue
+        unmount "$unit" "$mp"
+        echo "unmounted $mp (${current} unreachable)"
     fi
+
+    for host in "${hosts[@]}"; do
+        probe_host "$host" || continue
+        # A lazily-detached sshfs (reconnect opt) can outlive its mount
+        # and keep the unit name loaded; stop it before mounting again.
+        systemctl --user stop "$unit" 2>/dev/null
+        mkdir -p "$mp"
+        # Run sshfs in its own transient unit, NOT as a child of this
+        # service: systemd kills the whole cgroup when the oneshot unit
+        # exits, which would tear down the mount immediately.
+        # -f keeps sshfs in the foreground so the transient unit tracks it.
+        systemd-run --user --quiet --collect --unit "$unit" \
+            sshfs -f -o "$SSHFS_OPTS" "${host}:" "$mp"
+        # systemd-run only reports that the unit started; sshfs may still
+        # exit right away (e.g. auth failure), so verify the mount itself.
+        sleep 2
+        if is_mounted "$mp"; then
+            echo "mounted ${host}: -> $mp"
+            break
+        fi
+        echo "mount failed for ${host}: (check ssh auth)"
+    done
 done
 exit 0
