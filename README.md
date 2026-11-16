@@ -25,9 +25,10 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 
 ```
 .
-├── setup.sh                        # エントリポイント(ホームのリンク + モジュール実行)
+├── setup.sh                        # エントリポイント(ホームのリンク + モジュール実行、必要なら最後に再起動を案内)
 ├── lib/common.sh                   # 共通関数(ログ、バックアップ付き link、apt 導入 / 更新、.deb 導入、snap 削除、PATH)
 ├── lib/codex_sync.py               # Claude Code の設定を Codex に同期(codex.sh から実行)
+├── lib/claude_migrate.py           # フォルダ別だった Claude Code の履歴とメモリを共通フォルダへ移行(claude.sh から実行)
 ├── modules/                        # 実行順に記載。すべて再実行可
 │   ├── rtc.sh                      # RTC をローカル時刻に(Windows とのデュアルブート向け)
 │   ├── grub.sh                     # GRUB の初期選択を前回起動したエントリに(Windows とのデュアルブート向け)
@@ -45,7 +46,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 │   ├── japanese.sh                 # 日本語入力(ibus-mozc、Wayland / X11 両対応、入力中サジェスト無効)
 │   ├── systemd.sh                  # systemd ユーザーユニット(sshfs 自動マウント、Claude 設定リンク復元、vscode-pets パッチ)
 │   ├── nodejs.sh                   # Node.js LTS(NodeSource apt、sudo)
-│   ├── claude.sh                   # Claude Code CLI、設定リンク、プラグイン導入
+│   ├── claude.sh                   # Claude Code CLI、設定リンク、履歴とメモリの移行、プラグイン導入
 │   └── codex.sh                    # Codex CLI、Claude Code 設定の同期
 ├── .bashrc
 ├── .gitconfig                      # git 設定(user、editor、lfs)
@@ -55,6 +56,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 ├── etc/sysctl.d/10-cyclone-max.conf
 ├── .config/
 │   ├── environment.d/ime.conf      # IME 環境変数
+│   ├── environment.d/claude.conf   # Claude Code の履歴とメモリを全フォルダ共通にする環境変数
 │   ├── mozc/ibus_config.textproto  # Mozc エンジン宣言
 │   ├── systemd/user/               # sshfs 自動マウント、Claude 設定リンク復元、vscode-pets パッチ
 │   └── terminator/config           # Terminator 設定(透過背景、無限スクロールバック)
@@ -63,6 +65,7 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
     ├── CLAUDE.md
     ├── settings.json
     ├── agents/                     # Claude Code 専用サブエージェント(Codex 相談の中継役)
+    ├── hooks/                      # セッションタイトルに作業フォルダ名を付けるフック、履歴とメモリの移行を始めるフック
     ├── rules/                      # Claude Code 専用ルール(Codex には渡さない)
     └── skills/                     # /commit, /pr, /issue, codex-consult
 ```
@@ -90,15 +93,44 @@ sh ~/dotfiles/modules/claude.sh       # 単体実行
 
 `modules/claude.sh` が以下を行う。
 
-1. 公式インストーラで CLI を `~/.local/bin/claude` に導入(導入済みならスキップ)
-2. `.claude/` を `~/.claude/` にリンク
-3. `settings.json` の `extraKnownMarketplaces` を `claude plugin marketplace add` で登録
-4. `settings.json` の `enabledPlugins` を `claude plugin install` で導入
+1. 公式インストーラで CLI を `~/.local/bin/claude` に導入(導入済みなら更新)
+2. `.claude/` を `~/.claude/` に、`.config/environment.d/claude.conf` を `~/.config/environment.d/` にリンク
+3. 履歴とメモリの共通化の準備(設定ファイルのコピーと、再起動が必要かの判定。過去の履歴とメモリの移行は Claude Code の起動時フックが行う)
+4. `settings.json` の `extraKnownMarketplaces` を `claude plugin marketplace add` で登録
+5. `settings.json` の `enabledPlugins` を `claude plugin install` で導入
 
 Claude Code は `enabledPlugins` を settings.json に書き込むが、新しい環境でそれを自動導入はしない。
-3 と 4 がないと「有効なのに中身がない」状態になる。導入後は Claude Code を再起動するか `/reload-plugins` を実行する。
+4 と 5 がないと「有効なのに中身がない」状態になる。導入後は Claude Code を再起動するか `/reload-plugins` を実行する。
 
 プラグインの hook は `node` を使うものがあるため、`nodejs.sh` を先に実行する。
+
+### 履歴とメモリの共通化
+
+`claude.conf` により、会話履歴と自動メモリは作業フォルダに関係なく `~/.claude/projects/all/` に保存される。
+履歴の一覧でフォルダを見分けられるよう、`.claude/hooks/session_title_prefix.py` がタイトルの先頭に `【ホームからの相対パス】` を付ける。
+
+環境変数はログイン時に読まれるため、共通化が有効になるのは再起動の後になる。
+必要な場合は `setup.sh` が最後にその旨を表示し、端末から実行していれば再起動するかを尋ねる(デスクトップではダイアログ)。
+
+共通化の前に `~/.claude/projects/<フォルダ別>/` へ保存されたものは、次の流れで共通フォルダへ移る。セットアップを流すのは 1 回でよい。
+
+1. セットアップ時: `~/.claude.json` を `~/.claude/.claude.json` にコピーする(コピー先がない場合のみ。共通化後は後者が読まれる)。会話とメモリはまだ動かさない。共通化が有効になる前に動かすと、履歴の一覧から見えなくなるため
+2. 再起動後: Claude Code を開くと、SessionStart フック(`.claude/hooks/migrate_history.sh`)が裏で移行(`lib/claude_migrate.py`)を実行し、結果をデスクトップ通知で知らせる。警告や失敗の内容は `~/.claude/migrate_history.log` に残る
+
+移行を始めるのは、会話の保存先が共通フォルダになっている Claude Code のフックだけ。その Claude Code からは、移した後も履歴が見える。セットアップ自体は会話もメモリも動かさない。
+共通フォルダの指定には Claude Code v2.1.234 以降が必要。
+
+`environment.d` の変数が ssh のシェルに渡るとは限らない。変数を持たずに起動した Claude Code は旧フォルダを使い続け、移行もそこからは始まらない。
+同じ PC でデスクトップと ssh の両方から Claude Code を使う場合、デスクトップ側が移行した後は、変数を持たない ssh 側から過去の履歴とメモリが見えなくなる。
+
+移行の内容は次のとおり。
+
+- メモリを `all/memory/` にコピーし、`MEMORY.md` に元のフォルダごとの見出しで追記。元のフォルダは `memory.merged` に改名して残す
+- 会話を `all/` に移動し、タイトルに元のフォルダ名を付ける
+
+使用中の会話は移動せず、次に Claude Code を開いたときに回す。
+メモリの統合は Claude Code を開いたままでも行う。統合の瞬間に Claude Code が `MEMORY.md` を書き換えると、その追記が失われることがある。
+同名で内容が異なるメモリが `all/memory/` に既にある場合は上書きしない。別の旧フォルダにも同名のメモリがあれば番号付きの別名(`名前-2.md`)で取り込み、なければ統合後に編集されたものとみなして警告だけを出す。
 
 ## Codex
 

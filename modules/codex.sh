@@ -43,19 +43,9 @@ link_configs() {
 
 sync_from_claude() {
     section "Syncing Claude Code skills, hooks, rules and plugins"
-    tab="$(printf '\t')"
     status=0
     out="$(python3 "$DOTFILES_DIR/lib/codex_sync.py" "$DOTFILES_DIR")" || status=$?
-    printf '%s\n' "$out" | while IFS="$tab" read -r level msg; do
-        [ -n "$level" ] || continue
-        case "$level" in
-            ok) log_ok "$msg" ;;
-            link) log_link "$msg" ;;
-            move) log_move "$msg" ;;
-            skip) log_skip "$msg" ;;
-            *) log_warn "$msg" ;;
-        esac
-    done
+    printf '%s\n' "$out" | log_events
     return "$status"
 }
 

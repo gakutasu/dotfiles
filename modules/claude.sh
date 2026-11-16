@@ -1,6 +1,7 @@
 #!/bin/sh
-# Claude Code: install the native CLI, link .claude/ into ~/.claude/, then
-# register the marketplaces and install the plugins declared in settings.json.
+# Claude Code: install the native CLI, link .claude/ into ~/.claude/, move
+# per-folder history and memory into the shared project folder, then register
+# the marketplaces and install the plugins declared in settings.json.
 # Claude Code records enabledPlugins / extraKnownMarketplaces in settings.json
 # but does not install them on a new machine by itself, so without this step
 # the plugins are enabled yet silently missing. Safe to re-run; re-running
@@ -45,6 +46,19 @@ link_configs() {
     # Read at login, so it takes effect from the next session.
     mkdir -p "$HOME/.config/environment.d"
     link "$DOTFILES_DIR/.config/environment.d/claude.conf" "$HOME/.config/environment.d/claude.conf"
+}
+
+# claude.conf moves every session into one project folder. History and memory
+# written before that stay in the per-folder ones, out of sight. This copies
+# the config and asks for a reboot if claude.conf is not in effect yet; the
+# SessionStart hook in settings.json moves the rest when a Claude Code that
+# uses the shared folder starts.
+migrate_history() {
+    section "Preparing the shared Claude Code history"
+    status=0
+    out="$("$CLAUDE_DOTFILES_DIR/hooks/migrate_history.sh")" || status=$?
+    printf '%s\n' "$out" | log_events
+    return "$status"
 }
 
 # One "name<TAB>source" line per extraKnownMarketplaces entry, where source is
@@ -134,6 +148,7 @@ install_plugins() {
 main() {
     install_claude
     link_configs
+    migrate_history
     add_marketplaces
     update_marketplaces
     install_plugins

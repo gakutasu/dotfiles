@@ -21,6 +21,34 @@ log_move() { echo "${C_YELLOW}move:${C_RESET} $1"; }
 log_skip() { echo "${C_DIM}skip: $1${C_RESET}"; }
 log_warn() { echo "${C_YELLOW}warn:${C_RESET} $1"; }
 
+# --- Re-login notice --------------------------------------------------------
+# For a change that only a new login picks up. setup.sh collects the reasons
+# in DOTFILES_RELOGIN_FILE and asks about a reboot once, at the very end; a
+# module run on its own just says so.
+request_relogin() {
+    if [ -n "${DOTFILES_RELOGIN_FILE:-}" ]; then
+        printf '%s\n' "$1" >> "$DOTFILES_RELOGIN_FILE"
+    else
+        log_warn "$1 -- 再起動の後に有効になります"
+    fi
+}
+
+# Render the "<level>\t<message>" lines printed by the lib/*.py helpers.
+log_events() {
+    tab="$(printf '\t')"
+    while IFS="$tab" read -r level msg; do
+        [ -n "$level" ] || continue
+        case "$level" in
+            ok) log_ok "$msg" ;;
+            link) log_link "$msg" ;;
+            move) log_move "$msg" ;;
+            skip) log_skip "$msg" ;;
+            relogin) request_relogin "$msg" ;;
+            *) log_warn "$msg" ;;
+        esac
+    done
+}
+
 # --- Symlinking -------------------------------------------------------------
 # Create a symlink dest -> src, backing up any existing target first.
 link() {

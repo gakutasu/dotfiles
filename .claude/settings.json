@@ -86,6 +86,17 @@
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/migrate_history.sh --hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
