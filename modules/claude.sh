@@ -39,9 +39,12 @@ install_claude() {
 link_configs() {
     section "Linking Claude Code config"
     mkdir -p "$CLAUDE_HOME"
-    for item in CLAUDE.md settings.json skills rules agents; do
+    for item in CLAUDE.md settings.json skills rules agents hooks; do
         link "$CLAUDE_DOTFILES_DIR/$item" "$CLAUDE_HOME/$item"
     done
+    # Read at login, so it takes effect from the next session.
+    mkdir -p "$HOME/.config/environment.d"
+    link "$DOTFILES_DIR/.config/environment.d/claude.conf" "$HOME/.config/environment.d/claude.conf"
 }
 
 # One "name<TAB>source" line per extraKnownMarketplaces entry, where source is
