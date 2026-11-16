@@ -48,6 +48,9 @@ EXCLUDED_PLUGINS = {
 }
 # Dotfiles skill directories not mirrored to Codex (non-skills and Claude-only skills).
 EXCLUDED_DOTFILES_SKILLS = {"synced", "codex-consult"}
+# Hooks under this directory work on Claude Code's own session files (titles,
+# history folders) and have nothing to do in a Codex session.
+CLAUDE_ONLY_HOOK_DIR = "~/.claude/hooks/"
 
 CODEX_HOOK_EVENTS = {
     "SessionStart", "SessionEnd", "SubagentStart", "SubagentStop",
@@ -255,6 +258,9 @@ def plugin_hooks(plugin):
 def convert_handler(handler, origin, plugin_root):
     if handler.get("type", "command") != "command" or "command" not in handler:
         emit("warn", f"hook from {origin} skipped: type {handler.get('type')} is not supported by Codex")
+        return None
+    if CLAUDE_ONLY_HOOK_DIR in handler["command"]:
+        emit("skip", f"hook {handler['command']} (excluded: Claude Code only)")
         return None
     unknown = set(handler) - CODEX_HANDLER_KEYS - DROPPED_HANDLER_KEYS
     if unknown:

@@ -138,7 +138,7 @@ Claude Code は `enabledPlugins` を settings.json に書き込むが、新し�
 `CLAUDE.md` は `~/.codex/AGENTS.md` にリンクし、残りは `lib/codex_sync.py` が Claude 側の現状から毎回作り直す。
 
 - スキル: dotfiles の `skills/` と有効プラグインのスキルを `~/.agents/skills/` にリンク。プラグインのコマンドはスキルに変換して生成
-- フック: `settings.json` と有効プラグインのフックを `~/.codex/hooks.json` に統合。変更後は Codex 内の `/hooks` で一度承認が必要
+- フック: `settings.json` と有効プラグインのフックを `~/.codex/hooks.json` に統合。変更後は Codex 内の `/hooks` で一度承認が必要。`~/.claude/hooks/` のフック(タイトルの接頭辞、履歴の移行)は Claude Code 専用なので除外
 - 権限: `permissions` の `Bash(xxx *)` を `~/.codex/rules/claude.rules` の `prefix_rule` に変換。完全一致(`Bash(python3)` など)は前方一致にすると許可範囲が広がるため変換しない
 - プラグイン: Codex 公式版があるもの(`NATIVE_PLUGINS`、現状 superpowers)は Codex 側にネイティブ導入し、Claude 専用のもの(`EXCLUDED_PLUGINS`、codex プラグイン)は除外
 
